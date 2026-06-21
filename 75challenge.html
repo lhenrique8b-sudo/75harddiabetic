@@ -1711,7 +1711,10 @@ function completeSetup() {
   init();
 }
 
-function toDateStr(d) { return d.toISOString().split('T')[0]; }
+function toDateStr(d) {
+  // Use local time to avoid UTC timezone shift (e.g. Portugal UTC+1 in summer)
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 function today() { return toDateStr(new Date()); }
 
 function dayNum() {
@@ -2494,13 +2497,14 @@ function ctxLabel(ctx) {
 
 function getAllGlucReadings(days) {
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - (days || 14));
+  const cutoffStr = toDateStr(cutoff); // YYYY-MM-DD in local time — safe string compare
   const all = [...glucReadings];
   // absorb legacy fasting values from daily logs
   getLastNLogs(days || 14).filter(l => l.glucFasting).forEach(l => {
     if (!all.find(r => r.date === l.date && r.ctx === 'jejum' && r._fromNew))
       all.push({ id:'leg_'+l.date, date:l.date, time:'08:00', value:l.glucFasting, trend:'→', ctx:'jejum', _legacy:true });
   });
-  return all.filter(r => new Date(r.date) >= cutoff)
+  return all.filter(r => r.date && r.date >= cutoffStr)
             .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
 }
 
@@ -5395,8 +5399,8 @@ async function syncLlu() {
         if (!ts || !val) continue;
         const id  = 'llu_' + ts;
         if (!localReadings.find(x => x.id === id)) {
-          const dateStr = d.toISOString().slice(0, 10);
-          const timeStr = d.toTimeString().slice(0, 5);
+          const dateStr = toDateStr(d); // local date, avoids UTC timezone shift
+          const timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
           localReadings.push({
             id, ts,
             date:  dateStr,
