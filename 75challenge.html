@@ -1604,6 +1604,20 @@
 
   <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;font-weight:600" onclick="saveProfile()">💾 Guardar Alterações</button>
   <div id="pfSaveMsg" style="display:none;text-align:center;color:var(--green);font-size:13px;margin-top:10px;padding:8px">✅ Guardado com sucesso!</div>
+
+  <!-- Export / Import -->
+  <div class="card" style="margin-top:20px">
+    <div class="card-title">📦 Exportar / Importar Dados</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px">
+      Exporta todos os teus dados para um ficheiro JSON e importa-os noutro dispositivo (ex: do PC para o telemóvel).
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn btn-primary" onclick="exportData()" style="padding:12px;font-size:13px">⬇️ Exportar</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('importFileInput').click()" style="padding:12px;font-size:13px">⬆️ Importar</button>
+    </div>
+    <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
+    <div id="importStatus" style="margin-top:10px;font-size:12px;min-height:16px"></div>
+  </div>
 </div>
 
 <!-- SAVE MODAL -->
@@ -4662,6 +4676,90 @@ function loadLluConfig() {
   if (em && cfg.email)     em.value = cfg.email;
   if (pw && cfg.pwd)       pw.value = cfg.pwd;
   if (as && cfg.autoSync)  { as.checked = true; lluToggleUI(true); }
+}
+
+// ═══════════════════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════════════════
+function exportData() {
+  if (!currentUser) { showToast('Faz login primeiro', 'var(--amber)'); return; }
+
+  // Collect all keys for this user
+  const prefix = `c75_${currentUser}_`;
+  const data = { _version: 1, _user: currentUser, _exportedAt: new Date().toISOString() };
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith(prefix)) {
+      const shortKey = key.slice(prefix.length);
+      try { data[shortKey] = JSON.parse(localStorage.getItem(key)); }
+      catch { data[shortKey] = localStorage.getItem(key); }
+    }
+  }
+
+  // Also export account record
+  const accts = Accts.list();
+  const myAcct = accts.find(a => a.username === currentUser);
+  if (myAcct) data._account = myAcct;
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `75challenge_${currentUser}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Dados exportados ✓', 'var(--green)');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const statusEl = document.getElementById('importStatus');
+  statusEl.innerHTML = '<span style="color:var(--text2)">A importar...</span>';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data._version || !data._user) throw new Error('Ficheiro inválido');
+
+      const importUser = data._user;
+
+      // Register account if not exists
+      if (data._account) {
+        const accts = Accts.list();
+        if (!accts.find(a => a.username === importUser)) {
+          accts.push(data._account);
+          Accts.save(accts);
+        }
+      }
+
+      // Restore all user keys
+      const prefix = `c75_${importUser}_`;
+      let count = 0;
+      for (const [key, val] of Object.entries(data)) {
+        if (key.startsWith('_')) continue;
+        localStorage.setItem(prefix + key, JSON.stringify(val));
+        count++;
+      }
+
+      statusEl.innerHTML = `<span style="color:var(--green)">✅ ${count} itens importados para a conta "${importUser}". Faz login com essa conta.</span>`;
+      showToast(`Importação concluída ✓ (${count} itens)`, 'var(--green)');
+
+      // If importing into current user session, reload state
+      if (importUser === currentUser) {
+        logs   = S.get('logs', {});
+        config = S.get('config', null);
+        renderDashboard();
+      }
+    } catch(err) {
+      statusEl.innerHTML = `<span style="color:var(--red)">❌ Erro: ${err.message}</span>`;
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
 }
 
 async function syncLlu() {
