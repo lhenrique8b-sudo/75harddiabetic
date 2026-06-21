@@ -5378,12 +5378,21 @@ async function syncLlu() {
 
     // Step 3: Get glucose graph for each connection
     let newReadings = 0;
+    let debugLines = [`✅ Login OK · ${connections.length} ligação(ões)`];
     for (const conn of connections) {
       const patientId = conn.patientId;
+      debugLines.push(`🔗 Patient: ${patientId}`);
       const graphResp = await fetch(workerUrl + `/llu/connections/${patientId}/graph`, { headers: connHeaders });
       const graphData = await graphResp.json();
       const readings  = graphData?.data?.graphData || [];
       const current   = graphData?.data?.connection?.glucoseMeasurement;
+      debugLines.push(`📊 graphData: ${readings.length} leituras históricas`);
+      if (current) debugLines.push(`📍 Leitura atual: ${current.Value || current.value} mg/dL @ ${current.Timestamp || current.timestamp}`);
+      else debugLines.push(`📍 Leitura atual: nenhuma`);
+      if (readings.length > 0) {
+        const first = readings[0]; const last = readings[readings.length-1];
+        debugLines.push(`📅 Intervalo: ${first.Timestamp||first.timestamp} → ${last.Timestamp||last.timestamp}`);
+      }
 
       const toProcess = [...readings];
       if (current) toProcess.push(current);
@@ -5421,9 +5430,12 @@ async function syncLlu() {
     // Refresh global in-memory array so dashboard reflects new data
     glucReadings = S.get('glucReadings', []);
 
+    debugLines.push(`💾 Novas leituras adicionadas: ${newReadings}`);
     const now = new Date().toLocaleTimeString('pt-PT', { hour:'2-digit', minute:'2-digit' });
     S.set('lastSync', { time: now, source: 'LibreLinkUp', count: newReadings });
-    if (statusEl) statusEl.innerHTML = `<span style="color:var(--green)">✅ +${newReadings} leituras importadas às ${now}</span>`;
+    if (statusEl) statusEl.innerHTML = `
+      <div style="color:var(--green);margin-bottom:6px">✅ Sync OK às ${now} · +${newReadings} leituras</div>
+      <div style="background:var(--bg3);border-radius:8px;padding:8px;font-size:11px;color:var(--text2);line-height:1.8;white-space:pre-wrap">${debugLines.join('\n')}</div>`;
     renderSyncStatus();
     renderGlucDashboard();
     runInsightsAfterSync();
