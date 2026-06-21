@@ -4839,15 +4839,16 @@ async function syncLlu() {
       if (current) toProcess.push(current);
 
       const trendMap = { 1:'↓↓', 2:'↓', 3:'↘', 4:'→', 5:'↗', 6:'↑', 7:'↑↑' };
-      let glucReadings = S.get('glucReadings', []);
+      // Use global glucReadings directly (avoid shadowing with let)
+      const localReadings = S.get('glucReadings', []);
 
       for (const r of toProcess) {
         const ts  = new Date(r.Timestamp || r.timestamp).getTime();
         const val = r.Value || r.value;
         if (!ts || !val) continue;
         const id  = 'llu_' + ts;
-        if (!glucReadings.find(x => x.id === id)) {
-          glucReadings.push({
+        if (!localReadings.find(x => x.id === id)) {
+          localReadings.push({
             id, ts,
             value:   val,
             trend:   trendMap[r.TrendArrow || r.trendArrow] || '→',
@@ -4858,14 +4859,18 @@ async function syncLlu() {
         }
       }
 
-      glucReadings.sort((a,b) => b.ts - a.ts);
-      S.set('glucReadings', glucReadings);
+      localReadings.sort((a,b) => b.ts - a.ts);
+      S.set('glucReadings', localReadings);
     }
+
+    // Refresh global in-memory array so dashboard reflects new data
+    glucReadings = S.get('glucReadings', []);
 
     const now = new Date().toLocaleTimeString('pt-PT', { hour:'2-digit', minute:'2-digit' });
     S.set('lastSync', { time: now, source: 'LibreLinkUp', count: newReadings });
     if (statusEl) statusEl.innerHTML = `<span style="color:var(--green)">✅ +${newReadings} leituras importadas às ${now}</span>`;
     renderSyncStatus();
+    renderGlucDashboard();
     showToast(`+${newReadings} leituras do Libre ✓`, 'var(--green)');
 
   } catch(err) {
