@@ -317,6 +317,15 @@
       </div>
       <div id="authError" style="display:none;color:var(--red);font-size:12px;text-align:center;padding:6px 0 10px"></div>
       <button class="btn btn-primary" onclick="doLogin()" style="width:100%;padding:13px;font-size:14px">Entrar →</button>
+      <div style="text-align:center;margin-top:14px">
+        <button onclick="showRecovery()" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;text-decoration:underline">Esqueci a password / recuperar conta</button>
+      </div>
+      <!-- RECOVERY PANEL -->
+      <div id="recoveryPanel" style="display:none;margin-top:16px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:600">CONTAS GUARDADAS NESTE DISPOSITIVO</div>
+        <div id="recoveryList"></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.5">⚠️ Apagar a conta remove todos os teus dados neste dispositivo.</div>
+      </div>
     </div>
 
     <!-- REGISTER -->
@@ -384,6 +393,7 @@
   <span class="top-bar-title" id="topBarTitle">Dashboard</span>
   <div class="top-bar-user" id="navUser" style="display:none">
     <div class="nav-avatar" id="navAvatar">?</div>
+    <span id="navUserName" style="font-size:12px;color:var(--text2);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
     <button class="nav-logout" onclick="logout()">Sair</button>
   </div>
 </div>
@@ -4037,6 +4047,47 @@ function renderSavedAccounts() {
 function quickLogin(username) {
   document.getElementById('loginUser').value = username;
   document.getElementById('loginPwd').focus();
+  // hide recovery if open
+  const rp = document.getElementById('recoveryPanel');
+  if (rp) rp.style.display = 'none';
+}
+
+function showRecovery() {
+  const panel = document.getElementById('recoveryPanel');
+  const list  = document.getElementById('recoveryList');
+  if (!panel || !list) return;
+  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+  const accts = Accts.list();
+  if (!accts.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text3)">Nenhuma conta encontrada neste dispositivo.</div>';
+    return;
+  }
+  list.innerHTML = accts.map(a => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${a.displayName||a.username}</div>
+        <div style="font-size:11px;color:var(--text3)">@${a.username}</div>
+      </div>
+      <button onclick="deleteAccount('${a.username}')" style="background:var(--red);border:none;color:#fff;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-weight:600">Apagar</button>
+    </div>`).join('');
+}
+
+function deleteAccount(username) {
+  if (!confirm(`Apagar a conta "@${username}" e todos os seus dados?\n\nEsta ação não pode ser desfeita.`)) return;
+  // remove account from list
+  const accts = Accts.list().filter(a => a.username !== username);
+  Accts.save(accts);
+  // remove all data keys for this user
+  const prefix = `c75_${username}_`;
+  const toRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(prefix)) toRemove.push(k);
+  }
+  toRemove.forEach(k => localStorage.removeItem(k));
+  showToast('Conta apagada', 'var(--amber)');
+  showRecovery(); // refresh list
+  renderSavedAccounts();
 }
 
 async function doLogin() {
@@ -4095,8 +4146,8 @@ function loginAs(user) {
   // update nav
   const navUser = document.getElementById('navUser');
   if (navUser) {
-    document.getElementById('navAvatar').textContent   = (user.displayName||user.username)[0].toUpperCase();
-    document.getElementById('navUserName').textContent = user.displayName || user.username;
+    const av = document.getElementById('navAvatar'); if (av) av.textContent = (user.displayName||user.username)[0].toUpperCase();
+    const un = document.getElementById('navUserName'); if (un) un.textContent = user.displayName || user.username;
     navUser.style.display = 'flex';
   }
 
@@ -4169,9 +4220,9 @@ if (currentUser) {
   const _sess = JSON.parse(sessionStorage.getItem('c75_session') || '{}');
   const _user = Accts.list().find(a => a.username === currentUser);
   if (_user) {
-    document.getElementById('navAvatar').textContent   = (_user.displayName||_user.username)[0].toUpperCase();
-    document.getElementById('navUserName').textContent = _user.displayName || _user.username;
-    document.getElementById('navUser').style.display  = 'flex';
+    const _av = document.getElementById('navAvatar'); if (_av) _av.textContent = (_user.displayName||_user.username)[0].toUpperCase();
+    const _un = document.getElementById('navUserName'); if (_un) _un.textContent = _user.displayName || _user.username;
+    const _nu = document.getElementById('navUser'); if (_nu) _nu.style.display = 'flex';
   }
   reloadUserData();
   init();
