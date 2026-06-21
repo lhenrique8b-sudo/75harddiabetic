@@ -442,6 +442,9 @@
     <div class="motivation-sub" id="motivationSub"></div>
   </div>
 
+  <!-- INSIGHTS PANEL — pattern analysis -->
+  <div id="insightsPanel" style="display:none;margin-bottom:16px"></div>
+
   <!-- HIPER ALERT — shown when glucose ≥ 180 -->
   <div id="hyperAlert" style="display:none;margin-bottom:16px"></div>
 
@@ -1855,6 +1858,7 @@ function renderDashboard() {
   document.getElementById('motivationSub').textContent = m.s;
 
   renderStatTiles();
+  renderInsights();
   renderHyperAlert();
   renderCaloricBalance();
   renderWeightProgress();
@@ -1891,6 +1895,230 @@ function renderStatTiles() {
       <div class="stat-sub">objetivo: ${goal} kg</div>
     </div>
   `;
+}
+
+// ═══════════════════════════════════════
+// PATTERN ANALYSIS & INSIGHTS
+// ═══════════════════════════════════════
+function analyzeGlucPatterns() {
+  const readings = glucReadings;
+  if (readings.length < 6) return []; // not enough data
+
+  const insights = [];
+
+  // Helper: readings in last N days
+  const cutoff = (days) => { const d = new Date(); d.setDate(d.getDate()-days); return d.toISOString().slice(0,10); };
+  const recent14 = readings.filter(r => r.date >= cutoff(14));
+  const recent7  = readings.filter(r => r.date >= cutoff(7));
+  if (recent14.length < 4) return [];
+
+  // Helper: average of array
+  const avg = arr => arr.length ? Math.round(arr.reduce((s,v)=>s+v,0)/arr.length) : null;
+
+  // ── 1. TIME-OF-DAY BREAKDOWN ─────────────────────────────────────
+  const byHour = (from, to) => recent14.filter(r => {
+    const h = parseInt((r.time||'00:00').split(':')[0]);
+    return h >= from && h < to;
+  }).map(r => r.value);
+
+  const periods = [
+    { label:'Madrugada',  icon:'🌃', from:0,  to:6  },
+    { label:'Manhã',      icon:'🌅', from:6,  to:10 },
+    { label:'Almoço',     icon:'☀️', from:10, to:14 },
+    { label:'Tarde',      icon:'🌤️', from:14, to:18 },
+    { label:'Jantar',     icon:'🌆', from:18, to:22 },
+    { label:'Noite',      icon:'🌙', from:22, to:24 },
+  ];
+
+  const periodData = periods.map(p => {
+    const vals = byHour(p.from, p.to);
+    const mean = avg(vals);
+    const inRange = vals.length ? vals.filter(v => v >= 70 && v <= 180).length / vals.length * 100 : null;
+    return { ...p, vals, mean, inRange };
+  }).filter(p => p.vals.length >= 2);
+
+  // Worst period
+  const worst = [...periodData].filter(p => p.mean).sort((a,b) => b.mean-a.mean)[0];
+  if (worst && worst.mean > 160) {
+    const isMorning = worst.from >= 6 && worst.to <= 10;
+    insights.push({
+      type: 'pattern',
+      priority: worst.mean > 200 ? 'high' : 'med',
+      icon: worst.icon,
+      title: `Glicemia elevada ${worst.label.toLowerCase()} (${worst.mean} mg/dL em média)`,
+      body: isMorning
+        ? `O teu pâncreas produz hormonas de stress entre as 4-8h que sobem a glicemia — é o "fenómeno do amanhecer". Considera: (1) verificar às 7h e corrigir se >160, (2) falar com o médico sobre aumentar a basal noturna, (3) evitar HC ao pequeno-almoço.`
+        : `As tuas leituras ${worst.label.toLowerCase()} estão consistentemente altas. Analisa o que comes antes dessas horas e se o teu rácio IC cobre bem esse período.`,
+    });
+  }
+
+  // Best period (reinforce)
+  const best = [...periodData].filter(p => p.inRange !== null).sort((a,b) => b.inRange-a.inRange)[0];
+  if (best && best.inRange >= 80 && periodData.length > 2) {
+    insights.push({
+      type: 'positive',
+      priority: 'low',
+      icon: '✅',
+      title: `Melhor controlo ${best.label.toLowerCase()} (${Math.round(best.inRange)}% no intervalo)`,
+      body: `O teu controlo é mais sólido ${best.label.toLowerCase()}. Analisa o que fazes de diferente nesse período — rotina de refeições, insulina ou atividade física — e replica noutros períodos.`,
+    });
+  }
+
+  // ── 2. NOCTURNAL HYPOS ───────────────────────────────────────────
+  const nightHypos = recent14.filter(r => {
+    const h = parseInt((r.time||'12:00').split(':')[0]);
+    return (h >= 22 || h < 6) && r.value < 70;
+  });
+  if (nightHypos.length >= 2) {
+    insights.push({
+      type: 'alert',
+      priority: 'high',
+      icon: '⚠️',
+      title: `${nightHypos.length} hipoglicemias noturnas nos últimos 14 dias`,
+      body: `Hipoglicemias noturnas são perigosas. Ações: (1) verifica a glicemia antes de dormir — se <120 come 15-20g de HC de absorção lenta (pão, aveia), (2) considera reduzir a basal noturna com o médico, (3) ativa alertas no Libre se ainda não tens.`,
+    });
+  }
+
+  // ── 3. OVERALL TIR TREND (7 vs 14 days) ─────────────────────────
+  const tir7  = recent7.length  ? Math.round(recent7.filter(r=>r.value>=70&&r.value<=180).length/recent7.length*100)  : null;
+  const tir14 = recent14.length ? Math.round(recent14.filter(r=>r.value>=70&&r.value<=180).length/recent14.length*100) : null;
+  if (tir7 !== null && tir14 !== null) {
+    const delta = tir7 - tir14;
+    if (delta >= 8) {
+      insights.push({
+        type: 'positive',
+        priority: 'med',
+        icon: '📈',
+        title: `TIR a melhorar: ${tir7}% esta semana vs ${tir14}% em 14 dias`,
+        body: `O teu tempo no intervalo melhorou ${delta} pontos percentuais na última semana. Continua o que estás a fazer — o padrão está a convergir.`,
+      });
+    } else if (delta <= -8) {
+      insights.push({
+        type: 'alert',
+        priority: 'high',
+        icon: '📉',
+        title: `TIR a piorar: ${tir7}% esta semana vs ${tir14}% em 14 dias`,
+        body: `O controlo desta semana piorou. Identifica o que mudou: rotina de refeições, stress, sono, ou dose de basal. Regista mais leituras para mais contexto.`,
+      });
+    }
+  }
+
+  // ── 4. EXERCISE IMPACT ───────────────────────────────────────────
+  const exerciseDays = Object.values(logs).filter(l => l.exercise && l.exDuration >= 20 && l.date >= cutoff(14));
+  const restDays     = Object.values(logs).filter(l => !l.exercise && l.date >= cutoff(14));
+
+  if (exerciseDays.length >= 3 && restDays.length >= 3) {
+    const exTir  = exerciseDays.map(l => {
+      const dr = readings.filter(r => r.date === l.date && r.value >= 70 && r.value <= 180).length;
+      const dt = readings.filter(r => r.date === l.date).length;
+      return dt > 0 ? dr/dt : null;
+    }).filter(v=>v!==null);
+    const restTir = restDays.map(l => {
+      const dr = readings.filter(r => r.date === l.date && r.value >= 70 && r.value <= 180).length;
+      const dt = readings.filter(r => r.date === l.date).length;
+      return dt > 0 ? dr/dt : null;
+    }).filter(v=>v!==null);
+
+    if (exTir.length && restTir.length) {
+      const exAvg   = Math.round(avg(exTir.map(v=>v*100)));
+      const restAvg = Math.round(avg(restTir.map(v=>v*100)));
+      const diff = exAvg - restAvg;
+      if (Math.abs(diff) >= 10) {
+        insights.push({
+          type: diff > 0 ? 'positive' : 'alert',
+          priority: 'med',
+          icon: '🏋️',
+          title: diff > 0
+            ? `O exercício melhora a tua TIR em ${diff} pontos percentuais`
+            : `Dias de treino têm TIR ${Math.abs(diff)}pts abaixo — pode haver hipos pós-treino`,
+          body: diff > 0
+            ? `Nos dias em que treinas, a tua glicemia fica ${diff}% mais tempo no intervalo. Manter a consistência do exercício é uma das ferramentas mais poderosas que tens.`
+            : `Nos dias de treino, a tua glicemia fica mais tempo fora do intervalo. Verifica se tens hipos pós-treino. Considera reduzir o bólus da refeição pré-treino ou ter HC disponível durante o exercício.`,
+        });
+      }
+    }
+  }
+
+  // ── 5. HIGH FASTING PATTERN ─────────────────────────────────────
+  const fastingVals = recent14.filter(r => r.ctx === 'jejum' || (r.time && parseInt(r.time.split(':')[0]) >= 6 && parseInt(r.time.split(':')[0]) < 9 && r.source === 'LibreLinkUp')).map(r => r.value);
+  if (fastingVals.length >= 3) {
+    const avgFasting = avg(fastingVals);
+    if (avgFasting > 140) {
+      insights.push({
+        type: 'pattern',
+        priority: 'high',
+        icon: '🌅',
+        title: `Glicemia em jejum alta: média ${avgFasting} mg/dL`,
+        body: `A glicemia em jejum deve estar entre 80-130 mg/dL. Com ${avgFasting} mg/dL de média, há margem para melhorar. Opções: (1) aumentar a dose de basal (com médico), (2) verificar às 3h da manhã para descartar fenómeno do amanhecer, (3) evitar lanches noturnos com HC.`,
+      });
+    }
+  }
+
+  // Sort by priority
+  const priorityOrder = { high:0, med:1, low:2 };
+  insights.sort((a,b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+  return insights.slice(0, 4); // max 4 insights
+}
+
+function renderInsights() {
+  const el = document.getElementById('insightsPanel');
+  if (!el) return;
+
+  // Only re-run if enough new data or first render this session
+  const cacheKey = `insights_${glucReadings.length}`;
+  const cached = sessionStorage.getItem('lluInsightsKey');
+  let insights;
+  if (cached === cacheKey) {
+    try { insights = JSON.parse(sessionStorage.getItem('lluInsights')); } catch {}
+  }
+  if (!insights) {
+    insights = analyzeGlucPatterns();
+    sessionStorage.setItem('lluInsights', JSON.stringify(insights));
+    sessionStorage.setItem('lluInsightsKey', cacheKey);
+  }
+
+  if (!insights || insights.length === 0) { el.style.display = 'none'; return; }
+
+  const dismissed = sessionStorage.getItem('insightsDismissed') === 'true';
+  if (dismissed) { el.style.display = 'none'; return; }
+
+  const colorMap = {
+    alert:    { border: 'var(--red)',    bg: '#ff525210', badge: '#ff5252', badgeText: '⚠️ Atenção' },
+    pattern:  { border: 'var(--amber)',  bg: '#ffab4010', badge: '#ffab40', badgeText: '📊 Padrão' },
+    positive: { border: 'var(--green)',  bg: '#00e67610', badge: '#00e676', badgeText: '✅ Bom sinal' },
+  };
+
+  const cards = insights.map(ins => {
+    const c = colorMap[ins.type] || colorMap.pattern;
+    return `
+      <div style="border-left:3px solid ${c.border};background:${c.bg};border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:16px">${ins.icon}</span>
+          <span style="font-size:11px;font-weight:700;color:${c.badge};background:${c.bg};border:1px solid ${c.border};border-radius:20px;padding:2px 8px">${c.badgeText}</span>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">${ins.title}</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">${ins.body}</div>
+      </div>`;
+  }).join('');
+
+  el.style.display = '';
+  el.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text2)">🔍 Análise de Padrões · ${glucReadings.length} leituras</div>
+        <button onclick="sessionStorage.setItem('insightsDismissed','true');document.getElementById('insightsPanel').style.display='none'" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      ${cards}
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center">Atualiza após cada sync do LibreLinkUp · Baseado nos últimos 14 dias</div>
+    </div>`;
+}
+
+function runInsightsAfterSync() {
+  // Invalidate cache so insights recalculate on next render
+  sessionStorage.removeItem('lluInsightsKey');
+  sessionStorage.removeItem('insightsDismissed');
+  renderInsights();
 }
 
 // ═══════════════════════════════════════
@@ -4484,6 +4712,9 @@ function loginAs(user) {
   const fab = document.getElementById('glucFab');
   if (fab) fab.style.display = 'flex';
   reloadUserData();
+  // Invalidate insights cache so they recalculate for this user
+  sessionStorage.removeItem('lluInsightsKey');
+  sessionStorage.removeItem('insightsDismissed');
   init();
   setupPWA();
 }
@@ -5191,6 +5422,7 @@ async function syncLlu() {
     if (statusEl) statusEl.innerHTML = `<span style="color:var(--green)">✅ +${newReadings} leituras importadas às ${now}</span>`;
     renderSyncStatus();
     renderGlucDashboard();
+    runInsightsAfterSync();
     showToast(`+${newReadings} leituras do Libre ✓`, 'var(--green)');
 
   } catch(err) {
