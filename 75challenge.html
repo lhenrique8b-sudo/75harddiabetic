@@ -4817,9 +4817,10 @@ async function syncLlu() {
 
     const connResp = await fetch(workerUrl + '/llu/connections', { headers: connHeaders });
     const connData = await connResp.json();
-    const connections = connData?.data;
+    const rawConn = connData?.data;
+    const connections = Array.isArray(rawConn) ? rawConn : (rawConn ? [rawConn] : []);
 
-    if (!connections || connections.length === 0) {
+    if (connections.length === 0) {
       if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">⚠️ Nenhuma ligação encontrada. Confirma que tens o LibreLinkUp configurado.</span>';
       if (btn) btn.disabled = false;
       return;
