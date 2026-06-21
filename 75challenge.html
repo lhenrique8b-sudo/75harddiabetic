@@ -4843,23 +4843,28 @@ async function syncLlu() {
       const localReadings = S.get('glucReadings', []);
 
       for (const r of toProcess) {
-        const ts  = new Date(r.Timestamp || r.timestamp).getTime();
+        const d   = new Date(r.Timestamp || r.timestamp);
+        const ts  = d.getTime();
         const val = r.Value || r.value;
         if (!ts || !val) continue;
         const id  = 'llu_' + ts;
         if (!localReadings.find(x => x.id === id)) {
+          const dateStr = d.toISOString().slice(0, 10);
+          const timeStr = d.toTimeString().slice(0, 5);
           localReadings.push({
             id, ts,
-            value:   val,
-            trend:   trendMap[r.TrendArrow || r.trendArrow] || '→',
-            context: 'cgm',
-            source:  'LibreLinkUp'
+            date:  dateStr,
+            time:  timeStr,
+            value: val,
+            trend: trendMap[r.TrendArrow || r.trendArrow] || '→',
+            ctx:   'cgm',
+            source: 'LibreLinkUp'
           });
           newReadings++;
         }
       }
 
-      localReadings.sort((a,b) => b.ts - a.ts);
+      localReadings.sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
       S.set('glucReadings', localReadings);
     }
 
