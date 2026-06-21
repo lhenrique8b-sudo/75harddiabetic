@@ -442,8 +442,32 @@
     <div class="motivation-sub" id="motivationSub"></div>
   </div>
 
+  <!-- HIPER ALERT — shown when glucose ≥ 180 -->
+  <div id="hyperAlert" style="display:none;margin-bottom:16px"></div>
+
   <div class="grid3" style="margin-bottom:16px" id="statTiles">
     <!-- filled by JS -->
+  </div>
+
+  <!-- CALORIE BALANCE -->
+  <div class="card" id="calorieBalanceCard">
+    <div class="card-title">⚡ Balanço Calórico de Hoje</div>
+    <div id="calorieBalanceContent"></div>
+  </div>
+
+  <!-- WEIGHT + DEFICIT PROGRESS -->
+  <div class="card" id="weightProgressCard">
+    <div class="card-title">⚖️ Progresso de Peso</div>
+    <div id="weightProgressContent"></div>
+    <div class="chart-wrap" style="margin-top:12px;height:120px">
+      <canvas id="weightChart"></canvas>
+    </div>
+  </div>
+
+  <!-- DAY SCORE -->
+  <div class="card" id="dayScoreCard">
+    <div class="card-title">🏆 Score do Dia</div>
+    <div id="dayScoreContent"></div>
   </div>
 
   <div class="card">
@@ -1831,6 +1855,10 @@ function renderDashboard() {
   document.getElementById('motivationSub').textContent = m.s;
 
   renderStatTiles();
+  renderHyperAlert();
+  renderCaloricBalance();
+  renderWeightProgress();
+  renderDayScore();
   renderHabits();
   renderStreakChart();
 
@@ -1863,6 +1891,293 @@ function renderStatTiles() {
       <div class="stat-sub">objetivo: ${goal} kg</div>
     </div>
   `;
+}
+
+// ═══════════════════════════════════════
+// HYPERGLYCEMIA ALERT
+// ═══════════════════════════════════════
+const HIPER_THRESHOLD = 180;
+
+const HIPER_EXERCISES = [
+  { icon:'🚶', label:'Caminhada', fn: v => v < 220
+      ? `Caminha ${v < 200 ? 15 : 20} minutos a ritmo moderado`
+      : `Caminha ${v < 260 ? 25 : 30} minutos` },
+  { icon:'🪜', label:'Escadas', fn: v => v < 220
+      ? `Sobe e desce escadas durante ${v < 200 ? 5 : 8} minutos`
+      : `Sobe e desce escadas durante ${v < 260 ? 10 : 12} minutos` },
+  { icon:'⬇️', label:'Agachamentos', fn: v => `Faz ${v < 220 ? 3 : 5} séries de ${v < 220 ? 15 : 20} agachamentos lentos (pausa 1 min entre séries)` },
+  { icon:'🤸', label:'Saltar', fn: v => `Jumping jacks durante ${v < 220 ? 3 : 5} minutos (ou burpees ${v < 220 ? 10 : 15} repetições)` },
+];
+
+function renderHyperAlert() {
+  const el = document.getElementById('hyperAlert');
+  if (!el) return;
+
+  // Find most recent glucose reading
+  const recent = [...glucReadings].sort((a,b) => (b.date+b.time).localeCompare(a.date+a.time));
+  const last = recent[0];
+
+  if (!last || last.value < HIPER_THRESHOLD) { el.style.display = 'none'; return; }
+
+  const val = last.value;
+  const isMild   = val < 220;
+  const isModerate = val >= 220 && val < 280;
+  const isSevere = val >= 280;
+
+  // Rotate exercise suggestion based on current hour
+  const exIdx = new Date().getHours() % HIPER_EXERCISES.length;
+  const ex = HIPER_EXERCISES[exIdx];
+  const suggestion = ex.fn(val);
+
+  const borderColor = isSevere ? 'var(--red)' : isModerate ? '#ff7043' : 'var(--amber)';
+  const bg          = isSevere ? '#ff525212' : isModerate ? '#ff704312' : '#ffab4012';
+  const label       = isSevere ? '🔴 Hiperglicemia Severa' : isModerate ? '🟠 Hiperglicemia Moderada' : '🟡 Glicemia Elevada';
+  const correctionNote = isSevere
+    ? `<div style="font-size:12px;color:var(--red);margin-top:8px;padding:8px;background:#ff525210;border-radius:8px">⚠️ Considera corrigir com insulina + exercício 30 min depois</div>`
+    : '';
+
+  el.style.display = '';
+  el.innerHTML = `
+    <div style="background:${bg};border:1px solid ${borderColor};border-radius:var(--radius);padding:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:700;color:${borderColor}">${label}</span>
+        <span style="font-size:22px;font-weight:800;color:${borderColor}">${val} mg/dL</span>
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:10px">Última leitura: ${last.time || ''} ${last.date ? '· ' + last.date.slice(5) : ''}</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">${ex.icon} Sugestão de correção:</div>
+      <div style="font-size:14px;color:var(--text);line-height:1.5;padding:10px;background:rgba(255,255,255,.05);border-radius:8px">${suggestion}</div>
+      ${correctionNote}
+      <div style="margin-top:10px;font-size:11px;color:var(--text3)">💡 O exercício muscular aumenta a sensibilidade à insulina e baixa a glicemia naturalmente</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════
+// CALORIC BALANCE
+// ═══════════════════════════════════════
+const EXERCISE_MET = {
+  walk:  { low:2.5, med:3.5, high:4.5 },
+  run:   { low:7,   med:9,   high:12  },
+  gym:   { low:3,   med:5,   high:7   },
+  home:  { low:3,   med:5,   high:7   },
+  swim:  { low:5,   med:7,   high:9   },
+  bike:  { low:4,   med:6,   high:10  },
+  other: { low:3,   med:4,   high:6   },
+};
+const BODY_WEIGHT_KG = 85; // used for calorie burn estimate
+
+function calcExerciseBurn(type, durationMin, intensity) {
+  if (!type || !durationMin) return 0;
+  const met = (EXERCISE_MET[type] || EXERCISE_MET.other)[intensity || 'med'];
+  return Math.round(met * BODY_WEIGHT_KG * durationMin / 60);
+}
+
+function renderCaloricBalance() {
+  const el = document.getElementById('calorieBalanceContent');
+  if (!el) return;
+
+  const todayLog = logs[today()] || {};
+  const target   = config?.targetCals || 1800;
+  const eaten    = todayLog.cals || 0;
+  const burned   = calcExerciseBurn(todayLog.exercise || todayLog.exType, todayLog.exDuration || todayLog.exDur, todayLog.exIntensity || todayLog.exInt);
+  const net      = eaten - burned;
+  const deficit  = target - net; // positive = deficit (good for weight loss)
+  const pct      = Math.min(100, Math.round(eaten / target * 100));
+
+  const netColor = deficit > 0 ? 'var(--green)' : 'var(--red)';
+  const deficitLabel = deficit > 0 ? `−${deficit} kcal deficit` : `+${Math.abs(deficit)} kcal excesso`;
+
+  // Weekly accumulated deficit
+  const last7 = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const log = logs[toDateStr(d)] || {};
+    const c = log.cals || 0;
+    const b = calcExerciseBurn(log.exercise || log.exType, log.exDuration || log.exDur, log.exIntensity || log.exInt);
+    const t = config?.targetCals || 1800;
+    last7.push(Math.max(0, t - (c - b)));
+  }
+  const weekDeficit = last7.reduce((s,v) => s+v, 0);
+  const kgEstimate  = (weekDeficit / 7700).toFixed(2); // 7700 kcal ≈ 1 kg fat
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Comido</div>
+        <div style="font-size:20px;font-weight:700;color:var(--text)">${eaten || '—'}</div>
+        <div style="font-size:10px;color:var(--text3)">kcal</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Queimado</div>
+        <div style="font-size:20px;font-weight:700;color:var(--blue)">${burned || '—'}</div>
+        <div style="font-size:10px;color:var(--text3)">kcal treino</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Líquido</div>
+        <div style="font-size:20px;font-weight:700;color:${netColor}">${net || '—'}</div>
+        <div style="font-size:10px;color:${netColor}">${eaten ? deficitLabel : '—'}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:6px;font-size:11px;color:var(--text2)">Calorias comidas vs objetivo (${target} kcal)</div>
+    <div style="background:var(--bg3);border-radius:20px;height:8px;overflow:hidden;margin-bottom:12px">
+      <div style="height:100%;width:${pct}%;background:${pct > 110 ? 'var(--red)' : pct > 95 ? 'var(--amber)' : 'var(--green)'};border-radius:20px;transition:width .4s"></div>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:11px;color:var(--text2)">Défice acumulado (7 dias)</div>
+        <div style="font-size:16px;font-weight:700;color:var(--green)">${weekDeficit.toLocaleString()} kcal</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--text2)">Estimativa de perda</div>
+        <div style="font-size:16px;font-weight:700;color:var(--green)">~${kgEstimate} kg</div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════
+// WEIGHT TREND
+// ═══════════════════════════════════════
+function renderWeightProgress() {
+  const el = document.getElementById('weightProgressContent');
+  if (!el || !config) return;
+
+  const start  = config.startWeight || 0;
+  const goal   = config.goalWeight  || 0;
+  const current = getCurrentWeight();
+  const lost   = start - current;
+  const toGo   = current - goal;
+  const pct    = start > goal ? Math.min(100, Math.round(lost / (start - goal) * 100)) : 0;
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Início</div>
+        <div style="font-size:18px;font-weight:700;color:var(--text3)">${start || '—'}</div>
+        <div style="font-size:10px;color:var(--text3)">kg</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Atual</div>
+        <div style="font-size:22px;font-weight:800;color:var(--amber)">${current || '—'}</div>
+        <div style="font-size:10px;color:${lost > 0 ? 'var(--green)' : 'var(--text3)'}">${lost > 0 ? '−'+lost.toFixed(1)+' kg' : ''}</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Objetivo</div>
+        <div style="font-size:18px;font-weight:700;color:var(--green)">${goal || '—'}</div>
+        <div style="font-size:10px;color:var(--text3)">${toGo > 0 ? toGo.toFixed(1)+' kg faltam' : goal ? '🎯 Atingido!' : ''}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:6px;font-size:11px;color:var(--text2)">Progresso ${pct}%</div>
+    <div style="background:var(--bg3);border-radius:20px;height:10px;overflow:hidden">
+      <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--green2),var(--green));border-radius:20px;transition:width .5s"></div>
+    </div>`;
+
+  // Weight chart — last 30 days
+  const labels = [], data = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = toDateStr(d);
+    labels.push(d.getDate());
+    data.push(logs[k]?.weight || null);
+  }
+  mkChart('weightChart', 'line', {
+    labels,
+    datasets: [{
+      data, borderColor: '#ffab40', backgroundColor: '#ffab4015',
+      pointRadius: 3, pointBackgroundColor: '#ffab40',
+      borderWidth: 2, tension: 0.4, spanGaps: true
+    }]
+  }, {
+    scales: {
+      x: { ticks: { color: '#555', font: { size: 10 } }, grid: { color: '#1a1a1a' } },
+      y: { ticks: { color: '#555', font: { size: 10 }, callback: v => v+'kg' }, grid: { color: '#1a1a1a' } }
+    }
+  });
+}
+
+// ═══════════════════════════════════════
+// DAY SCORE
+// ═══════════════════════════════════════
+function renderDayScore() {
+  const el = document.getElementById('dayScoreContent');
+  if (!el) return;
+
+  const todayLog = logs[today()] || {};
+  const target   = config?.targetCals || 1800;
+  const eaten    = todayLog.cals || 0;
+  const burned   = calcExerciseBurn(todayLog.exercise || todayLog.exType, todayLog.exDuration || todayLog.exDur, todayLog.exIntensity || todayLog.exInt);
+  const net      = eaten > 0 ? eaten - burned : null;
+
+  // Score components (0-100 each)
+  let scoreGluc = 0, scoreGlucLabel = 'Sem dados', scoreGlucColor = 'var(--text3)';
+  const todayReadings = glucReadings.filter(r => r.date === today());
+  if (todayReadings.length > 0) {
+    const inRange = todayReadings.filter(r => r.value >= 70 && r.value <= 180).length;
+    scoreGluc = Math.round(inRange / todayReadings.length * 100);
+    scoreGlucColor = scoreGluc >= 70 ? 'var(--green)' : scoreGluc >= 50 ? 'var(--amber)' : 'var(--red)';
+    scoreGlucLabel = `${scoreGluc}% no intervalo (${todayReadings.length} leit.)`;
+  }
+
+  let scoreCals = 0, scoreCalsLabel = 'Sem log', scoreCalsColor = 'var(--text3)';
+  if (net !== null && target > 0) {
+    const ratio = net / target;
+    scoreCals = ratio <= 1.0 ? 100 : ratio <= 1.1 ? Math.round((1.1 - ratio) * 1000) : 0;
+    scoreCalsColor = scoreCals >= 80 ? 'var(--green)' : scoreCals >= 50 ? 'var(--amber)' : 'var(--red)';
+    const defOrEx = target - net;
+    scoreCalsLabel = defOrEx >= 0 ? `Deficit de ${defOrEx} kcal ✓` : `Excesso de ${Math.abs(defOrEx)} kcal`;
+  }
+
+  const exType = todayLog.exercise || todayLog.exType;
+  const exDur  = todayLog.exDuration || todayLog.exDur;
+  const didWorkout = !!(exType && exDur);
+  const scoreTreino = didWorkout ? 100 : 0;
+  const scoreTreinoColor = didWorkout ? 'var(--green)' : 'var(--text3)';
+  const scoreTreinoLabel = didWorkout ? `${exDur}min ${exType} (+${burned} kcal)` : 'Sem treino hoje';
+
+  const habits = todayLog.habits || {};
+  const doneCount = Object.values(habits).filter(Boolean).length;
+  const scoreHabits = Math.round(doneCount / Math.max(HABITS.length, 1) * 100);
+
+  // Total score weighted
+  const hasGluc = todayReadings.length > 0;
+  const hasCals = net !== null;
+  let total, totalLabel;
+  if (hasGluc && hasCals) {
+    total = Math.round(scoreGluc * 0.35 + scoreCals * 0.30 + scoreTreino * 0.20 + scoreHabits * 0.15);
+  } else if (hasGluc) {
+    total = Math.round(scoreGluc * 0.50 + scoreTreino * 0.30 + scoreHabits * 0.20);
+  } else {
+    total = Math.round(scoreTreino * 0.50 + scoreHabits * 0.50);
+  }
+
+  const totalColor = total >= 80 ? 'var(--green)' : total >= 55 ? 'var(--amber)' : 'var(--red)';
+  const totalEmoji = total >= 85 ? '🔥' : total >= 70 ? '💪' : total >= 50 ? '📈' : '💡';
+
+  const row = (icon, label, val, color, sub) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:18px">${icon}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${label}</div>
+        <div style="font-size:11px;color:var(--text3)">${sub}</div>
+      </div>
+      <div style="font-size:16px;font-weight:700;color:${color}">${val}%</div>
+    </div>`;
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:14px;background:var(--bg3);border-radius:10px">
+      <div style="font-size:40px">${totalEmoji}</div>
+      <div>
+        <div style="font-size:32px;font-weight:900;color:${totalColor};line-height:1">${total}</div>
+        <div style="font-size:12px;color:var(--text2)">Score do dia / 100</div>
+      </div>
+      <div style="flex:1">
+        <div style="background:var(--border);border-radius:20px;height:8px;overflow:hidden">
+          <div style="height:100%;width:${total}%;background:${totalColor};border-radius:20px;transition:width .5s"></div>
+        </div>
+      </div>
+    </div>
+    ${row('🩸','Glicemia no intervalo', scoreGluc, scoreGlucColor, scoreGlucLabel)}
+    ${row('🍽️','Balanço calórico', scoreCals, scoreCalsColor, scoreCalsLabel)}
+    ${row('🏋️','Treino', scoreTreino, scoreTreinoColor, scoreTreinoLabel)}
+    ${row('✅','Hábitos', scoreHabits, scoreHabits>=80?'var(--green)':scoreHabits>=50?'var(--amber)':'var(--red)', `${doneCount}/${HABITS.length} completos`)}`;
 }
 
 // ═══════════════════════════════════════
