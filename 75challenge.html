@@ -33,19 +33,26 @@
     --radius-sm: 8px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
 
-  /* NAV */
-  nav { background: var(--bg2); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 0; }
-  .nav-brand { padding: 16px 20px; font-weight: 700; font-size: 15px; color: var(--green); letter-spacing: -0.3px; flex-shrink: 0; }
-  .nav-tabs { display: flex; overflow-x: auto; scrollbar-width: none; }
+  /* TOP BAR */
+  .top-bar { background: rgba(13,13,13,.92); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid rgba(255,255,255,.07); position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; height: 52px; padding-top: env(safe-area-inset-top); }
+  .top-bar-brand { font-size: 17px; font-weight: 800; color: var(--green); letter-spacing: -0.5px; }
+  .top-bar-title { font-size: 17px; font-weight: 600; color: var(--text); position: absolute; left: 50%; transform: translateX(-50%); }
+  .top-bar-user { display: flex; align-items: center; gap: 8px; }
+
+  /* BOTTOM TAB BAR */
+  nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: rgba(18,18,18,.95); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: 1px solid rgba(255,255,255,.07); display: flex; align-items: stretch; }
+  .nav-tabs { display: flex; overflow-x: auto; scrollbar-width: none; flex: 1; padding-bottom: env(safe-area-inset-bottom); }
   .nav-tabs::-webkit-scrollbar { display: none; }
-  .nav-tab { padding: 16px 18px; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all .15s; }
-  .nav-tab:hover { color: var(--text); }
-  .nav-tab.active { color: var(--green); border-bottom-color: var(--green); }
+  .nav-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 8px 4px 6px; min-width: 60px; flex: 1; font-size: 10px; font-weight: 500; color: var(--text3); cursor: pointer; border: none; background: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; transition: color .15s; }
+  .nav-tab-icon { font-size: 22px; line-height: 1.1; transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
+  .nav-tab:active .nav-tab-icon { transform: scale(.78); }
+  .nav-tab.active { color: var(--green); }
+  .nav-tab.active .nav-tab-icon { transform: scale(1.08); }
 
   /* LAYOUT */
-  .page { display: none; padding: 24px 20px; max-width: 900px; margin: 0 auto; }
+  .page { display: none; padding: 16px 16px 100px; max-width: 900px; margin: 0 auto; }
   .page.active { display: block; }
 
   /* CARDS */
@@ -90,8 +97,8 @@
 
   /* HABIT CHECKS */
   .habit-list { display: flex; flex-direction: column; gap: 10px; }
-  .habit-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all .15s; user-select: none; }
-  .habit-item:hover { border-color: var(--green2); }
+  .habit-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: transform .12s, border-color .15s, background .15s; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .habit-item:active { transform: scale(.98); }
   .habit-item.done { border-color: var(--green); background: var(--green-dim); }
   .habit-check { width: 22px; height: 22px; border: 2px solid var(--text3); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; }
   .habit-item.done .habit-check { background: var(--green); border-color: var(--green); }
@@ -109,19 +116,19 @@
   /* INPUTS */
   .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
   .form-label { font-size: 12px; color: var(--text2); font-weight: 500; }
-  .form-input { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; color: var(--text); font-size: 14px; outline: none; transition: border .15s; width: 100%; }
+  .form-input { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; color: var(--text); font-size: 16px; outline: none; transition: border .15s; width: 100%; min-height: 44px; -webkit-appearance: none; }
   .form-input:focus { border-color: var(--green2); }
   .form-input[type=range] { padding: 4px 0; background: none; border: none; cursor: pointer; accent-color: var(--green); }
   .range-val { font-size: 20px; font-weight: 700; color: var(--green); text-align: center; margin-bottom: 4px; }
   select.form-input option { background: #1e1e1e; }
 
   /* BUTTONS */
-  .btn { padding: 11px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+  .btn { padding: 11px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: transform .12s, background .15s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; min-height: 44px; }
+  .btn:active { transform: scale(.96); }
   .btn-primary { background: var(--green); color: #000; }
-  .btn-primary:hover { background: var(--green2); }
+  .btn-primary:active { background: var(--green2); }
   .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text2); }
-  .btn-ghost:hover { border-color: var(--green2); color: var(--green); }
-  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn-sm { padding: 7px 14px; font-size: 12px; min-height: 36px; }
   .btn-row { display: flex; gap: 10px; margin-top: 6px; }
 
   /* GLUCOSE LEVELS */
@@ -155,11 +162,12 @@
   .gluc-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .gluc-row:last-child { border-bottom: none; }
 
-  /* TABS inside page */
-  .inner-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; overflow-x: auto; scrollbar-width: none; }
+  /* TABS inside page — iOS segmented control style */
+  .inner-tabs { display: flex; gap: 4px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 3px; margin-bottom: 20px; overflow-x: auto; scrollbar-width: none; }
   .inner-tabs::-webkit-scrollbar { display: none; }
-  .inner-tab { padding: 10px 14px; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; white-space: nowrap; }
-  .inner-tab.active { color: var(--green); border-bottom-color: var(--green); }
+  .inner-tab { padding: 7px 12px; font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; border-radius: 8px; transition: all .18s; white-space: nowrap; text-align: center; -webkit-tap-highlight-color: transparent; touch-action: manipulation; flex: 1; }
+  .inner-tab:active { transform: scale(.95); }
+  .inner-tab.active { color: var(--text); background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
 
   /* GLUCOSE T1D */
   .tir-bar { display: flex; height: 22px; border-radius: var(--radius-sm); overflow: hidden; margin: 10px 0; }
@@ -239,14 +247,14 @@
   @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
   @keyframes toastIn { from { opacity:0; transform:translate(-50%,-8px); } to { opacity:1; transform:translate(-50%,0); } }
   /* FAB */
-  .gluc-fab { position:fixed; bottom:88px; right:18px; z-index:150; width:58px; height:58px; border-radius:50%; background:var(--blue); border:none; color:#000; font-size:26px; cursor:pointer; box-shadow:0 4px 20px rgba(64,196,255,.45); transition:transform .15s,box-shadow .15s; display:flex; align-items:center; justify-content:center; -webkit-tap-highlight-color:transparent; }
+  .gluc-fab { position:fixed; bottom:calc(72px + env(safe-area-inset-bottom)); right:18px; z-index:150; width:56px; height:56px; border-radius:50%; background:var(--blue); border:none; color:#000; font-size:24px; cursor:pointer; box-shadow:0 4px 20px rgba(64,196,255,.45); transition:transform .15s,box-shadow .15s; display:flex; align-items:center; justify-content:center; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
   .gluc-fab:active { transform:scale(.88); box-shadow:0 2px 10px rgba(64,196,255,.3); }
   /* Bottom sheet modal */
   .bsheet-backdrop { position:fixed; inset:0; z-index:300; background:rgba(0,0,0,.65); display:flex; align-items:flex-end; }
   .bsheet-body { width:100%; background:var(--bg2); border-radius:20px 20px 0 0; padding:20px 20px calc(20px + env(safe-area-inset-bottom)); animation:slideUp .22s cubic-bezier(.2,.8,.3,1); max-height:92vh; overflow-y:auto; }
   .bsheet-handle { width:40px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 18px; }
   /* Toast */
-  .toast { position:fixed; bottom:160px; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--green); color:var(--green); padding:10px 22px; border-radius:99px; font-size:13px; font-weight:600; z-index:500; white-space:nowrap; animation:toastIn .2s ease; pointer-events:none; }
+  .toast { position:fixed; bottom:calc(80px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--green); color:var(--green); padding:10px 22px; border-radius:99px; font-size:13px; font-weight:600; z-index:500; white-space:nowrap; animation:toastIn .2s ease; pointer-events:none; }
   .toast.red { border-color:var(--red); color:var(--red); }
 
   /* WORKOUT SPECIFIC */
@@ -370,22 +378,43 @@
   </div>
 </div>
 
-<!-- NAV -->
-<nav>
-  <div class="nav-brand">⚡ 75</div>
-  <div class="nav-tabs">
-    <div class="nav-tab active" onclick="showPage('dashboard')">Dashboard</div>
-    <div class="nav-tab" onclick="showPage('log')">Registar</div>
-    <div class="nav-tab" onclick="showPage('glucose')">Glicemia</div>
-    <div class="nav-tab" onclick="showPage('nutrition')">Nutrição</div>
-    <div class="nav-tab" onclick="showPage('progress')">Progresso</div>
-    <div class="nav-tab" onclick="showPage('treino')">Treino</div>
-    <div class="nav-tab" onclick="showPage('badges')">Conquistas</div>
-  </div>
-  <div class="nav-user" id="navUser" style="display:none">
+<!-- TOP BAR -->
+<div class="top-bar">
+  <span class="top-bar-brand">⚡ 75</span>
+  <span class="top-bar-title" id="topBarTitle">Dashboard</span>
+  <div class="top-bar-user" id="navUser" style="display:none">
     <div class="nav-avatar" id="navAvatar">?</div>
-    <span style="font-size:12px;color:var(--text2);white-space:nowrap" id="navUserName">—</span>
     <button class="nav-logout" onclick="logout()">Sair</button>
+  </div>
+</div>
+
+<!-- BOTTOM TAB BAR -->
+<nav>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-page="dashboard" onclick="showPage('dashboard',this)">
+      <span class="nav-tab-icon">🏠</span><span>Início</span>
+    </button>
+    <button class="nav-tab" data-page="log" onclick="showPage('log',this)">
+      <span class="nav-tab-icon">✏️</span><span>Hoje</span>
+    </button>
+    <button class="nav-tab" data-page="glucose" onclick="showPage('glucose',this)">
+      <span class="nav-tab-icon">🩸</span><span>Glicemia</span>
+    </button>
+    <button class="nav-tab" data-page="nutrition" onclick="showPage('nutrition',this)">
+      <span class="nav-tab-icon">🥗</span><span>Nutrição</span>
+    </button>
+    <button class="nav-tab" data-page="progress" onclick="showPage('progress',this)">
+      <span class="nav-tab-icon">📈</span><span>Progresso</span>
+    </button>
+    <button class="nav-tab" data-page="treino" onclick="showPage('treino',this)">
+      <span class="nav-tab-icon">💪</span><span>Treino</span>
+    </button>
+    <button class="nav-tab" data-page="badges" onclick="showPage('badges',this)">
+      <span class="nav-tab-icon">🏆</span><span>Conquistas</span>
+    </button>
+    <button class="nav-tab" data-page="perfil" onclick="showPage('perfil',this)">
+      <span class="nav-tab-icon">⚙️</span><span>Perfil</span>
+    </button>
   </div>
 </nav>
 
@@ -803,36 +832,61 @@
   <!-- ── SINCRONIZAR ─────────────────────── -->
   <div id="gluc-sync" style="display:none">
 
-    <!-- NightScout -->
+    <!-- LibreLinkUp -->
     <div class="card">
-      <div class="card-title">🌐 NightScout</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">
-        Liga ao teu NightScout para importar automaticamente as leituras do Freestyle Libre.
-        O NightScout suporta CORS — funciona directo do browser.
+      <div class="card-title">📡 LibreLinkUp — Tempo Real</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+        Liga diretamente ao LibreLinkUp com as tuas credenciais do FreeStyle LibreLink.
+        Requer o <strong>Cloudflare Worker</strong> configurado (proxy gratuito).
+      </div>
+
+      <!-- Worker setup hint -->
+      <div id="lluWorkerHint" style="background:#40c4ff11;border:1px solid #40c4ff44;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--blue);line-height:1.7">
+        <strong>🔧 Ainda sem Worker configurado.</strong><br>
+        Segue os passos em <strong>⚙️ Perfil → Sincronização</strong> para o configurar — demora ~10 min e é gratuito.
+      </div>
+
+      <div class="form-row">
+        <label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px">URL do Cloudflare Worker</label>
+        <input type="url" id="lluWorkerUrl" placeholder="https://llu-proxy.o-teu-nome.workers.dev"
+          style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:14px;outline:none;width:100%"
+          oninput="lluCheckWorker()">
       </div>
       <div class="form-row">
-        <label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px">URL do NightScout</label>
-        <input type="url" id="nsUrlInput" placeholder="https://o-teu-site.herokuapp.com"
-          style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none">
+        <label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px">Email LibreView</label>
+        <input type="email" id="lluEmail" placeholder="o-teu-email@exemplo.com" autocomplete="email"
+          style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:14px;outline:none;width:100%">
       </div>
       <div class="form-row">
-        <label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px">Token API (opcional)</label>
-        <input type="text" id="nsTokenInput" placeholder="secret-token (se tiver autenticação)"
-          style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none">
+        <label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px">Password LibreView</label>
+        <input type="password" id="lluPassword" placeholder="••••••••" autocomplete="current-password"
+          style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:14px;outline:none;width:100%">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-        <button onclick="saveNsConfig()" class="btn btn-ghost">Guardar</button>
-        <button onclick="syncNightScout()" class="btn btn-primary">🔄 Sincronizar</button>
+        <button onclick="saveLluConfig()" class="btn btn-ghost">💾 Guardar</button>
+        <button onclick="syncLlu()" class="btn btn-primary" id="lluSyncBtn">🔄 Sincronizar</button>
       </div>
-      <div id="nsSyncStatus" style="margin-top:10px;font-size:12px;min-height:18px"></div>
+      <div id="lluSyncStatus" style="margin-top:10px;font-size:12px;min-height:18px;line-height:1.5"></div>
+
+      <!-- Auto sync -->
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:13px;font-weight:600">Sincronização automática</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">A cada vez que abres a app</div>
+        </div>
+        <label style="position:relative;width:44px;height:26px;cursor:pointer">
+          <input type="checkbox" id="lluAutoSync" style="opacity:0;width:0;height:0" onchange="saveLluConfig()">
+          <span style="position:absolute;inset:0;background:var(--border);border-radius:13px;transition:.2s" id="lluToggleBg"></span>
+          <span style="position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)" id="lluToggleKnob"></span>
+        </label>
+      </div>
     </div>
 
     <!-- LibreView CSV -->
     <div class="card">
       <div class="card-title">📥 LibreView — Importar CSV</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">
-        No LibreView Web, vai a <strong>Gerar Relatório</strong> → exporta como CSV.
-        O ficheiro tem todas as leituras históricas do sensor.
+        Alternativa sem Worker. Exporta do LibreView e importa aqui para dados históricos.
       </div>
       <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--text2);line-height:1.7">
         1. Entra em <strong>libreview.com</strong><br>
@@ -851,7 +905,7 @@
 
     <!-- Sync status -->
     <div class="card" id="syncStatusCard">
-      <div class="card-title">📊 Estado da sincronização</div>
+      <div class="card-title">📊 Estado</div>
       <div id="syncStatusContent">
         <div class="empty"><div class="empty-icon">📡</div>Ainda sem sincronizações.</div>
       </div>
@@ -1476,6 +1530,72 @@
   </div>
 </div>
 
+<!-- PERFIL PAGE -->
+<div class="page fade" id="page-perfil">
+  <div class="section-title" style="margin-bottom:16px">⚙️ Perfil &amp; Configurações</div>
+
+  <!-- Challenge -->
+  <div class="card">
+    <div class="card-title">Challenge</div>
+    <div class="form-row">
+      <div class="form-label">Data de início</div>
+      <input class="form-input" id="pfStartDate" type="date">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Peso inicial (kg)</div>
+      <input class="form-input" id="pfStartWeight" type="number" step="0.1" placeholder="ex: 89.5">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Peso objetivo (kg)</div>
+      <input class="form-input" id="pfGoalWeight" type="number" step="0.1" placeholder="ex: 78.0">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Calorias diárias alvo</div>
+      <input class="form-input" id="pfTargetCals" type="number" placeholder="ex: 1800">
+    </div>
+  </div>
+
+  <!-- Insulin params -->
+  <div class="card">
+    <div class="card-title">Parâmetros de Insulina</div>
+    <div class="form-row">
+      <div class="form-label">Glicemia alvo (mg/dL)</div>
+      <input class="form-input" id="pfTarget" type="number" placeholder="120">
+    </div>
+    <div class="form-row">
+      <div class="form-label">FSI — Fator de Sensibilidade (mg/dL por unidade)</div>
+      <input class="form-input" id="pfFsi" type="number" placeholder="40">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Incremento de dose (unidades) — Lyumjev Jr</div>
+      <input class="form-input" id="pfDoseStep" type="number" step="0.5" placeholder="0.5">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Basal — Insulina</div>
+      <input class="form-input" id="pfBasalBrand" type="text" placeholder="ex: Tresiba">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Basal — Dose (unidades)</div>
+      <input class="form-input" id="pfBasalDose" type="number" step="0.5" placeholder="45">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Basal — Horário</div>
+      <input class="form-input" id="pfBasalTiming" type="text" placeholder="ex: ao acordar">
+    </div>
+  </div>
+
+  <!-- IC Ratios -->
+  <div class="card">
+    <div class="card-title">Rácios Insulina/Carboidratos (g HC por unidade)</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Define o rácio para cada período do dia. Hora = a partir de que hora se aplica.</div>
+    <div id="pfIcRatios" style="display:flex;flex-direction:column;gap:10px"></div>
+    <button class="btn" style="margin-top:12px;padding:8px 14px;font-size:12px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:var(--radius-sm);cursor:pointer" onclick="addIcRatio()">+ Adicionar período</button>
+  </div>
+
+  <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;font-weight:600" onclick="saveProfile()">💾 Guardar Alterações</button>
+  <div id="pfSaveMsg" style="display:none;text-align:center;color:var(--green);font-size:13px;margin-top:10px;padding:8px">✅ Guardado com sucesso!</div>
+</div>
+
 <!-- SAVE MODAL -->
 <div class="modal-overlay" id="saveModal">
   <div class="modal fade">
@@ -1554,11 +1674,20 @@ function dayNum() {
 // ═══════════════════════════════════════
 // NAV
 // ═══════════════════════════════════════
-function showPage(id) {
+const PAGE_TITLES = { dashboard:'Dashboard', log:'Hoje', glucose:'Glicemia', nutrition:'Nutrição', progress:'Progresso', treino:'Treino', badges:'Conquistas', perfil:'Perfil' };
+
+function showPage(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  event.target.classList.add('active');
+  // activate the correct tab
+  const tab = el ? el.closest('.nav-tab') : document.querySelector(`.nav-tab[data-page="${id}"]`);
+  if (tab) tab.classList.add('active');
+  // update top bar title
+  const titleEl = document.getElementById('topBarTitle');
+  if (titleEl) titleEl.textContent = PAGE_TITLES[id] || id;
+  // light haptic on iOS (via AudioContext workaround — silent but triggers Taptic)
+  try { const ac = new AudioContext(); ac.resume(); setTimeout(()=>ac.close(),100); } catch {}
   refreshPage(id);
 }
 
@@ -1569,6 +1698,7 @@ function refreshPage(id) {
   if (id === 'progress') renderProgress();
   if (id === 'treino') renderTreino();
   if (id === 'badges') renderBadges();
+  if (id === 'perfil') renderPerfil();
 }
 
 // ═══════════════════════════════════════
@@ -4048,6 +4178,7 @@ if (currentUser) {
   setupPWA();
   const _fab = document.getElementById('glucFab');
   if (_fab) _fab.style.display = 'flex';
+  lluAutoSyncIfEnabled();
 } else {
   // No session — show auth overlay
   document.getElementById('authOverlay').style.display = 'flex';
@@ -4372,11 +4503,13 @@ function handleLibreCSV(input) {
 }
 
 function renderSyncStatus() {
+  // Load LLU config into fields when sync tab is visible
+  loadLluConfig();
   const el = document.getElementById('syncStatusContent');
   if (!el) return;
   const sync = S.get('lastSync', null);
   const total = glucReadings.length;
-  const cgm = glucReadings.filter(r => r.source === 'nightscout' || r.source === 'libre_csv' || r.ctx === 'cgm').length;
+  const cgm = glucReadings.filter(r => r.source === 'nightscout' || r.source === 'libre_csv' || r.source === 'LibreLinkUp' || r.ctx === 'cgm').length;
   if (!sync) {
     el.innerHTML = `<div style="font-size:13px;color:var(--text2)">Total de leituras na app: <strong style="color:var(--text)">${total}</strong></div>`;
     return;
@@ -4439,5 +4572,268 @@ function renderSyncStatus() {
     <button onclick="closeQuickGluc()" class="btn btn-ghost" style="width:100%;padding:11px">Cancelar</button>
   </div>
 </div>
+
+<script>
+// ═══════════════════════════════════════
+// LIBRELINKUP SYNC
+// ═══════════════════════════════════════
+
+function lluCheckWorker() {
+  const url = document.getElementById('lluWorkerUrl')?.value?.trim();
+  const hint = document.getElementById('lluWorkerHint');
+  if (hint) hint.style.display = url ? 'none' : '';
+}
+
+function saveLluConfig() {
+  const workerUrl = document.getElementById('lluWorkerUrl')?.value?.trim();
+  const email     = document.getElementById('lluEmail')?.value?.trim();
+  const pwd       = document.getElementById('lluPassword')?.value;
+  const autoSync  = document.getElementById('lluAutoSync')?.checked;
+  S.set('lluConfig', { workerUrl, email, pwd, autoSync });
+  lluToggleUI(autoSync);
+  showToast('Configuração guardada ✓', 'var(--green)');
+}
+
+function lluToggleUI(on) {
+  const bg    = document.getElementById('lluToggleBg');
+  const knob  = document.getElementById('lluToggleKnob');
+  if (bg)   bg.style.background   = on ? 'var(--green)' : 'var(--border)';
+  if (knob) knob.style.left       = on ? '21px' : '3px';
+}
+
+function loadLluConfig() {
+  const cfg = S.get('lluConfig', {});
+  const wu  = document.getElementById('lluWorkerUrl');
+  const em  = document.getElementById('lluEmail');
+  const pw  = document.getElementById('lluPassword');
+  const as  = document.getElementById('lluAutoSync');
+  if (wu && cfg.workerUrl) { wu.value = cfg.workerUrl; lluCheckWorker(); }
+  if (em && cfg.email)     em.value = cfg.email;
+  if (pw && cfg.pwd)       pw.value = cfg.pwd;
+  if (as && cfg.autoSync)  { as.checked = true; lluToggleUI(true); }
+}
+
+async function syncLlu() {
+  const cfg = S.get('lluConfig', {});
+  const { workerUrl, email, pwd } = cfg;
+  const statusEl = document.getElementById('lluSyncStatus');
+  const btn = document.getElementById('lluSyncBtn');
+
+  if (!workerUrl) { showToast('Configura o URL do Worker primeiro', 'var(--amber)'); return; }
+  if (!email || !pwd) { showToast('Introduz o email e password do LibreView', 'var(--amber)'); return; }
+
+  if (btn) btn.disabled = true;
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--text2)">🔄 A autenticar...</span>';
+
+  try {
+    // Step 1: Login
+    const loginResp = await fetch(workerUrl + '/llu/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pwd })
+    });
+    const loginData = await loginResp.json();
+
+    // Handle regional redirect
+    let base = null;
+    if (loginData?.data?.redirect && loginData?.data?.region) {
+      base = `api.${loginData.data.region}.libreview.io`;
+    }
+
+    const token = loginData?.data?.authTicket?.token;
+    if (!token) {
+      if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">❌ Login falhou: ${loginData?.error?.message || 'credenciais incorretas'}</span>`;
+      if (btn) btn.disabled = false;
+      return;
+    }
+
+    // Step 2: Get connections
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--text2)">🔍 A obter dados do sensor...</span>';
+    const connHeaders = { 'Authorization': 'Bearer ' + token };
+    if (base) connHeaders['x-llu-base'] = base;
+
+    const connResp = await fetch(workerUrl + '/llu/connections', { headers: connHeaders });
+    const connData = await connResp.json();
+    const connections = connData?.data;
+
+    if (!connections || connections.length === 0) {
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">⚠️ Nenhuma ligação encontrada. Confirma que tens o LibreLinkUp configurado.</span>';
+      if (btn) btn.disabled = false;
+      return;
+    }
+
+    // Step 3: Get glucose graph for each connection
+    let newReadings = 0;
+    for (const conn of connections) {
+      const patientId = conn.patientId;
+      const graphResp = await fetch(workerUrl + `/llu/connections/${patientId}/graph`, { headers: connHeaders });
+      const graphData = await graphResp.json();
+      const readings  = graphData?.data?.graphData || [];
+      const current   = graphData?.data?.connection?.glucoseMeasurement;
+
+      const toProcess = [...readings];
+      if (current) toProcess.push(current);
+
+      const trendMap = { 1:'↓↓', 2:'↓', 3:'↘', 4:'→', 5:'↗', 6:'↑', 7:'↑↑' };
+      let glucReadings = S.get('glucReadings', []);
+
+      for (const r of toProcess) {
+        const ts  = new Date(r.Timestamp || r.timestamp).getTime();
+        const val = r.Value || r.value;
+        if (!ts || !val) continue;
+        const id  = 'llu_' + ts;
+        if (!glucReadings.find(x => x.id === id)) {
+          glucReadings.push({
+            id, ts,
+            value:   val,
+            trend:   trendMap[r.TrendArrow || r.trendArrow] || '→',
+            context: 'cgm',
+            source:  'LibreLinkUp'
+          });
+          newReadings++;
+        }
+      }
+
+      glucReadings.sort((a,b) => b.ts - a.ts);
+      S.set('glucReadings', glucReadings);
+    }
+
+    const now = new Date().toLocaleTimeString('pt-PT', { hour:'2-digit', minute:'2-digit' });
+    S.set('lastSync', { time: now, source: 'LibreLinkUp', count: newReadings });
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--green)">✅ +${newReadings} leituras importadas às ${now}</span>`;
+    renderSyncStatus();
+    showToast(`+${newReadings} leituras do Libre ✓`, 'var(--green)');
+
+  } catch(err) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">❌ Erro: ${err.message}</span>`;
+    showToast('Erro na sincronização', 'var(--red)');
+  }
+  if (btn) btn.disabled = false;
+}
+
+// Auto-sync on init if configured
+function lluAutoSyncIfEnabled() {
+  const cfg = S.get('lluConfig', {});
+  if (cfg.autoSync && cfg.workerUrl && cfg.email && cfg.pwd) {
+    syncLlu();
+  }
+}
+
+// ═══════════════════════════════════════
+// PERFIL — render & save
+// ═══════════════════════════════════════
+function renderPerfil() {
+  // Challenge fields
+  if (config) {
+    document.getElementById('pfStartDate').value   = config.startDate    || '';
+    document.getElementById('pfStartWeight').value = config.startWeight  || '';
+    document.getElementById('pfGoalWeight').value  = config.goalWeight   || '';
+    document.getElementById('pfTargetCals').value  = config.targetCals   || '';
+  }
+  // Insulin params
+  document.getElementById('pfTarget').value    = GLUC_PARAMS.target   || 120;
+  document.getElementById('pfFsi').value       = GLUC_PARAMS.fsi      || 40;
+  document.getElementById('pfDoseStep').value  = GLUC_PARAMS.doseStep || 0.5;
+  document.getElementById('pfBasalBrand').value   = (GLUC_PARAMS.basal && GLUC_PARAMS.basal.brand)  || '';
+  document.getElementById('pfBasalDose').value    = (GLUC_PARAMS.basal && GLUC_PARAMS.basal.dose)   || '';
+  document.getElementById('pfBasalTiming').value  = (GLUC_PARAMS.basal && GLUC_PARAMS.basal.timing) || '';
+  // IC Ratios
+  renderIcRatios();
+  document.getElementById('pfSaveMsg').style.display = 'none';
+}
+
+function renderIcRatios() {
+  const container = document.getElementById('pfIcRatios');
+  container.innerHTML = '';
+  const ratios = GLUC_PARAMS.icRatios || [];
+  ratios.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:80px 1fr 32px;gap:8px;align-items:center';
+    row.innerHTML = `
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">A partir de</div>
+        <input type="number" min="0" max="23" value="${r.hour}" class="form-input" style="padding:8px;text-align:center" data-ic-hour="${i}">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">g HC / unidade</div>
+        <input type="number" min="1" step="0.5" value="${r.ratio}" class="form-input" style="padding:8px;text-align:center" data-ic-ratio="${i}">
+      </div>
+      <button onclick="removeIcRatio(${i})" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--red);cursor:pointer;padding:6px;margin-top:16px;font-size:14px">×</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function addIcRatio() {
+  const ratios = [...(GLUC_PARAMS.icRatios || [])];
+  const lastHour = ratios.length ? ratios[ratios.length - 1].hour : 0;
+  ratios.push({ hour: Math.min(lastHour + 4, 22), ratio: 10 });
+  GLUC_PARAMS.icRatios = ratios;
+  renderIcRatios();
+}
+
+function removeIcRatio(i) {
+  const ratios = [...(GLUC_PARAMS.icRatios || [])];
+  if (ratios.length <= 1) { showToast('Precisa de pelo menos 1 rácio', 'var(--amber)'); return; }
+  ratios.splice(i, 1);
+  GLUC_PARAMS.icRatios = ratios;
+  renderIcRatios();
+}
+
+function saveProfile() {
+  // Read IC ratios from DOM before saving
+  const hourInputs  = document.querySelectorAll('[data-ic-hour]');
+  const ratioInputs = document.querySelectorAll('[data-ic-ratio]');
+  const newRatios = [];
+  hourInputs.forEach((inp, i) => {
+    newRatios.push({ hour: parseInt(inp.value) || 0, ratio: parseFloat(ratioInputs[i].value) || 10 });
+  });
+  newRatios.sort((a, b) => a.hour - b.hour);
+
+  // Update config
+  const sw  = parseFloat(document.getElementById('pfStartWeight').value);
+  const gw  = parseFloat(document.getElementById('pfGoalWeight').value);
+  const cal = parseInt(document.getElementById('pfTargetCals').value);
+  const sd  = document.getElementById('pfStartDate').value;
+
+  if (!sw || !gw) { showToast('Peso inicial e objetivo são obrigatórios', 'var(--red)'); return; }
+
+  config = Object.assign(config || {}, {
+    startWeight: sw,
+    goalWeight:  gw,
+    targetCals:  cal || config.targetCals || 1800,
+    startDate:   sd  || config.startDate,
+  });
+  S.set('config', config);
+
+  // Update GLUC_PARAMS
+  GLUC_PARAMS.target   = parseFloat(document.getElementById('pfTarget').value)   || 120;
+  GLUC_PARAMS.fsi      = parseFloat(document.getElementById('pfFsi').value)      || 40;
+  GLUC_PARAMS.doseStep = parseFloat(document.getElementById('pfDoseStep').value) || 0.5;
+  GLUC_PARAMS.basal    = {
+    brand:  document.getElementById('pfBasalBrand').value.trim()  || 'Tresiba',
+    dose:   parseFloat(document.getElementById('pfBasalDose').value) || 45,
+    timing: document.getElementById('pfBasalTiming').value.trim() || 'ao acordar',
+  };
+  GLUC_PARAMS.icRatios = newRatios;
+
+  // Persist insulin params
+  S.set('glucParams', {
+    fsi:      GLUC_PARAMS.fsi,
+    target:   GLUC_PARAMS.target,
+    doseStep: GLUC_PARAMS.doseStep,
+    basal:    GLUC_PARAMS.basal,
+    bolus:    GLUC_PARAMS.bolus,
+    icRatios: GLUC_PARAMS.icRatios,
+  });
+
+  // Show success
+  const msg = document.getElementById('pfSaveMsg');
+  msg.style.display = 'block';
+  setTimeout(() => { msg.style.display = 'none'; }, 3000);
+  showToast('Perfil guardado ✓', 'var(--green)');
+}
+</script>
+
 </body>
 </html>
