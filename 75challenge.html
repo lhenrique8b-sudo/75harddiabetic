@@ -4665,8 +4665,22 @@ function loadLluConfig() {
 }
 
 async function syncLlu() {
+  // Read from DOM fields first (no need to press Guardar before Sincronizar)
+  const domUrl   = document.getElementById('lluWorkerUrl')?.value?.trim();
+  const domEmail = document.getElementById('lluEmail')?.value?.trim();
+  const domPwd   = document.getElementById('lluPassword')?.value;
+
+  // Fall back to saved config if DOM fields aren't visible
   const cfg = S.get('lluConfig', {});
-  const { workerUrl, email, pwd } = cfg;
+  const workerUrl = domUrl   || cfg.workerUrl || '';
+  const email     = domEmail || cfg.email     || '';
+  const pwd       = domPwd   || cfg.pwd       || '';
+
+  // Auto-save whatever we have
+  if (workerUrl || email || pwd) {
+    S.set('lluConfig', { workerUrl, email, pwd, autoSync: cfg.autoSync });
+  }
+
   const statusEl = document.getElementById('lluSyncStatus');
   const btn = document.getElementById('lluSyncBtn');
 
