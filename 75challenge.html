@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>75 Challenge — Luís</title>
+<title>DiabControl — Luís</title>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="⚡ 75">
-<meta name="application-name" content="⚡ 75 Challenge">
+<meta name="apple-mobile-web-app-title" content="🩸 DiabCtrl">
+<meta name="application-name" content="🩸 DiabControl">
 <meta name="theme-color" content="#0d0d0d">
-<meta name="description" content="75-day diabetes challenge tracker — glucose, nutrition, workouts">
+<meta name="description" content="Gestão da diabetes — glicemia, nutrição e exercício">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
@@ -293,8 +293,8 @@
 <!-- AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay" style="display:none">
   <div class="auth-card fade">
-    <div class="auth-logo">⚡ 75</div>
-    <div class="auth-subtitle">Challenge do Diabético</div>
+    <div class="auth-logo">🩸 DC</div>
+    <div class="auth-subtitle">Gestão da Diabetes</div>
 
     <div class="auth-tabs">
       <div class="auth-tab active" onclick="switchAuthTab('login',this)">Entrar</div>
@@ -360,9 +360,9 @@
 <!-- SETUP SCREEN -->
 <div class="setup-overlay" id="setupOverlay">
   <div class="setup-card fade">
-    <div class="setup-emoji">💪</div>
+    <div class="setup-emoji">🩸</div>
     <div class="setup-title">Bem-vindo, Luís</div>
-    <div class="setup-sub">Vamos personalizar o teu challenge de 75 dias. Adaptado para diabetes e regresso ao treino.</div>
+    <div class="setup-sub">Vamos configurar a tua aplicação de gestão da diabetes. Só precisamos de alguns dados base.</div>
     <div class="form-row">
       <div class="form-label">Peso atual (kg)</div>
       <input class="form-input" id="setupWeight" type="number" step="0.1" placeholder="ex: 89.5">
@@ -379,17 +379,14 @@
       <div class="form-label">Calorias diárias alvo</div>
       <input class="form-input" id="setupCals" type="number" placeholder="ex: 1800">
     </div>
-    <div class="form-row">
-      <div class="form-label">Data de início do challenge</div>
-      <input class="form-input" id="setupStart" type="date">
-    </div>
-    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="completeSetup()">Começar o Challenge →</button>
+    <input type="hidden" id="setupStart">
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="completeSetup()">Começar →</button>
   </div>
 </div>
 
 <!-- TOP BAR -->
 <div class="top-bar">
-  <span class="top-bar-brand">⚡ 75</span>
+  <span class="top-bar-brand">🩸 DC</span>
   <span class="top-bar-title" id="topBarTitle">Dashboard</span>
   <div class="top-bar-user" id="navUser" style="display:none">
     <div class="nav-avatar" id="navAvatar">?</div>
@@ -431,16 +428,15 @@
 <!-- ═══════════════════ DASHBOARD ═══════════════════ -->
 <div class="page active fade" id="page-dashboard">
 
-  <div class="day-hero">
-    <div class="day-num" id="dashDayNum">—</div>
-    <div class="day-label">DIA DO CHALLENGE</div>
+  <div class="day-hero" id="glucHero" style="cursor:default">
+    <div class="day-num" id="dashGlucValue" style="font-size:clamp(42px,10vw,64px)">—</div>
+    <div class="day-label" id="dashGlucStatus" style="font-size:13px;letter-spacing:1px">SEM LEITURAS</div>
     <div class="day-date" id="dashDate"></div>
+    <div id="dashTirBadge" style="margin-top:6px;font-size:12px;color:var(--text2)"></div>
   </div>
 
-  <div id="motivationBanner" class="motivation">
-    <div class="motivation-quote" id="motivationText">A carregar...</div>
-    <div class="motivation-sub" id="motivationSub"></div>
-  </div>
+  <!-- BEDTIME PROTOCOL -->
+  <div id="bedtimeCard" style="display:none;margin-bottom:16px"></div>
 
   <!-- INSIGHTS PANEL — pattern analysis -->
   <div id="insightsPanel" style="display:none;margin-bottom:16px"></div>
@@ -474,13 +470,13 @@
   </div>
 
   <div class="card">
-    <div class="card-title">Hábitos de hoje</div>
+    <div class="card-title">Protocolo do dia</div>
     <div class="habit-list" id="habitList"></div>
   </div>
 
   <div class="card">
     <div class="section-header">
-      <span class="card-title" style="margin:0">Streak</span>
+      <span class="card-title" style="margin:0">Adesão ao Protocolo</span>
       <span id="streakBadge" style="font-size:13px;color:var(--amber)">🔥 —</span>
     </div>
     <div class="chart-wrap">
@@ -1316,8 +1312,8 @@
   </div>
 
   <div class="card">
-    <div class="card-title">📅 Calendário do Challenge</div>
-    <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(15,1fr);gap:3px;margin-top:8px">
+    <div class="card-title">📅 Calendário de Adesão</div>
+    <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(15,1fr);gap:2px;margin-top:8px">
       <!-- filled by JS -->
     </div>
     <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--text2)">
@@ -1554,7 +1550,7 @@
       <div style="margin-top:8px">
         <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Total de páginas lidas: <strong id="totalPages" style="color:var(--green)">0</strong></div>
         <div class="prog-bar"><div class="prog-fill green" id="readProgress" style="width:0%"></div></div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">Meta: 750 páginas em 75 dias</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Meta: 750 páginas em 365 dias</div>
       </div>
     </div>
   </div>
@@ -1571,9 +1567,9 @@
 <div class="page fade" id="page-perfil">
   <div class="section-title" style="margin-bottom:16px">⚙️ Perfil &amp; Configurações</div>
 
-  <!-- Challenge -->
+  <!-- Config -->
   <div class="card">
-    <div class="card-title">Challenge</div>
+    <div class="card-title">Configuração</div>
     <div class="form-row">
       <div class="form-label">Data de início</div>
       <input class="form-input" id="pfStartDate" type="date">
@@ -1701,7 +1697,7 @@ function completeSetup() {
   const gw = parseFloat(document.getElementById('setupGoalWeight').value);
   const g = parseFloat(document.getElementById('setupGlucose').value) || null;
   const c = parseInt(document.getElementById('setupCals').value) || 1800;
-  const start = document.getElementById('setupStart').value || toDateStr(new Date());
+  const start = toDateStr(new Date());
 
   if (!w || !gw) { alert('Introduz o teu peso atual e objetivo!'); return; }
 
@@ -1759,31 +1755,28 @@ function refreshPage(id) {
 // MOTIVATION ENGINE
 // ═══════════════════════════════════════
 function getMotivation() {
-  const day = dayNum();
-  const remaining = 75 - day + 1;
+  const streak = getStreak();
   const allLogs = Object.values(logs);
 
-  // weight projections
+  // weight projection
   let weightMsg = '';
   if (config) {
-    const lost = config.startWeight - getCurrentWeight();
-    const rate = allLogs.length > 7 ? lost / allLogs.length : 0.08; // ~80g/day default
-    const projLoss = rate * remaining;
-    const projWeight = getCurrentWeight() - projLoss;
-    if (projLoss > 0.5) weightMsg = `Em ${remaining} dias chegas a ~${projWeight.toFixed(1)} kg 🎯`;
+    const lost = (config.startWeight || 0) - getCurrentWeight();
+    if (lost > 0.3) weightMsg = `Já perdeste ${lost.toFixed(1)} kg desde o início 🎯`;
   }
 
-  // streak
-  const streak = getStreak();
   const msgs = [
-    { q: `Dia ${day} de 75 — estás a ${Math.round(day/75*100)}% do challenge!`, s: 'Cada dia conta. A consistência bate a intensidade.' },
-    { q: `🔥 ${streak} dias seguidos. Não pares agora.`, s: 'O teu corpo está a adaptar-se. A mudança já está a acontecer.' },
-    { q: weightMsg || `${remaining} dias para o fim — a linha de chegada está à vista.`, s: 'Diabéticos que treinam regularmente reduzem glicemia em 20-30%.' },
-    { q: `A glicemia agradece cada treino e cada copo de água 💧`, s: 'O exercício é o teu anti-inflamatório natural.' },
-    { q: `Passaram ${day} dias. A versão de ti daqui a 75 dias vai agradecer.`, s: 'Não é sobre ser perfeito — é sobre ser consistente.' },
+    { q: `🔥 ${streak} dia${streak !== 1 ? 's' : ''} de protocolo seguidos. Não pares agora.`, s: 'A consistência é o único caminho para estabilizar a glicemia.' },
+    { q: weightMsg || `A glicemia agradece cada treino e cada copo de água 💧`, s: 'Exercício regular reduz HbA1c em 0.5-1.5% em diabéticos tipo 2.' },
+    { q: `Cada refeição em horário é uma vitória para o teu pâncreas 🍽️`, s: 'Horários regulares suavizam os picos de glicose pós-prandial.' },
+    { q: `Controlo a longo prazo salva-te as complicações. Cada dia importa.`, s: 'Cada 1% de redução do HbA1c reduz risco de complicações em ~25%.' },
+    { q: `Beber água ajuda os rins a limpar o excesso de glicose no sangue 💧`, s: 'Hidratação adequada é parte essencial do controlo da diabetes.' },
+    { q: `O sono de qualidade estabiliza a insulina e reduz a resistência 😴`, s: 'Menos de 6h de sono aumenta a resistência à insulina significativamente.' },
+    { q: `Verificar a glicemia antes de dormir é proteção para a noite toda 🌙`, s: 'Hipoglicemia noturna pode ser silenciosa e perigosa. Previne-a.' },
   ];
 
-  return msgs[day % msgs.length];
+  const idx = new Date().getDate() % msgs.length;
+  return msgs[idx];
 }
 
 function getCurrentWeight() {
@@ -1807,12 +1800,14 @@ function getStreak() {
 // HABITS
 // ═══════════════════════════════════════
 const HABITS = [
-  { id:'water', icon:'💧', name:'3L de água', meta:'3 litros por dia' },
-  { id:'exercise', icon:'🏋️', name:'Treino do dia', meta:'qualquer tipo de exercício' },
-  { id:'diet', icon:'🥗', name:'No plano alimentar', meta:'sem junk food' },
-  { id:'glucose', icon:'🩸', name:'Medir glicemia', meta:'em jejum' },
-  { id:'read', icon:'📖', name:'10 min de leitura', meta:'mínimo 10 minutos' },
-  { id:'noalcohol', icon:'🚫', name:'Sem álcool', meta:'dia sem álcool' },
+  { id:'basal',    icon:'💉', name:'Insulina basal tomada',        meta:'tomar à hora certa todos os dias' },
+  { id:'fastGluc', icon:'🩸', name:'Medição glicemia em jejum',    meta:'antes de comer, registar o valor' },
+  { id:'meals',    icon:'🍽️', name:'Refeições em horário',         meta:'de 3 em 3h, sem saltar refeições' },
+  { id:'exercise', icon:'🏋️', name:'Exercício ≥ 30 min',           meta:'qualquer tipo de atividade física' },
+  { id:'water',    icon:'💧', name:'3L de água',                   meta:'mínimo 3 litros por dia' },
+  { id:'diet',     icon:'🥗', name:'Sem açúcar / junk food',       meta:'seguir o plano alimentar' },
+  { id:'bedCheck', icon:'🌙', name:'Verificação antes de dormir',  meta:'glicemia + snack se necessário' },
+  { id:'noalcohol',icon:'🚫', name:'Sem álcool',                   meta:'dia sem álcool' },
 ];
 
 function renderHabits() {
@@ -1851,10 +1846,76 @@ function toggleHabit(id) {
 // ═══════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════
+function renderGlucHero() {
+  const sorted = [...glucReadings].sort((a,b) => (b.date+b.time).localeCompare(a.date+a.time));
+  const latest = sorted[0];
+  const todayStr = today();
+  const todayR = glucReadings.filter(r => r.date === todayStr);
+  const inRange = todayR.filter(r => r.value >= 70 && r.value <= 180).length;
+  const tirPct = todayR.length ? Math.round(inRange / todayR.length * 100) : null;
+
+  const valEl = document.getElementById('dashGlucValue');
+  const statusEl = document.getElementById('dashGlucStatus');
+  const tirEl = document.getElementById('dashTirBadge');
+
+  if (latest) {
+    const val = latest.value;
+    const trend = latest.trend || '';
+    const trendArr = {'1':'↑↑','2':'↑','3':'↗','4':'→','5':'↘','6':'↓','7':'↓↓'}[String(trend)] || '';
+    let color = val < 70 ? 'var(--red)' : val <= 140 ? 'var(--green)' : val <= 180 ? 'var(--amber)' : 'var(--red)';
+    let statusTxt = val < 70 ? '⬇️ HIPOGLICEMIA' : val <= 140 ? '✅ EM CONTROLO' : val <= 180 ? '⚠️ LIMITE ALTO' : '🔴 HIPERGLICEMIA';
+    const timeAgo = latest.time ? `· ${latest.time}` : '';
+    valEl.textContent = val + (trendArr ? ' ' + trendArr : '') + ' mg/dL';
+    valEl.style.color = color;
+    statusEl.textContent = statusTxt + ' ' + timeAgo;
+    tirEl.textContent = tirPct !== null
+      ? `TIR hoje: ${tirPct}% (${todayR.length} leituras)`
+      : 'Sincroniza o Libre para ver TIR de hoje';
+  } else {
+    valEl.textContent = '—';
+    valEl.style.color = 'var(--text2)';
+    statusEl.textContent = 'SEM LEITURAS — SINCRONIZA O LIBRE';
+    tirEl.textContent = '';
+  }
+
+  // Bedtime protocol — show after 21h
+  const hour = new Date().getHours();
+  if (hour >= 21 || hour < 2) {
+    renderBedtimeCard(latest ? latest.value : null);
+  } else {
+    document.getElementById('bedtimeCard').style.display = 'none';
+  }
+}
+
+function renderBedtimeCard(currentGluc) {
+  const card = document.getElementById('bedtimeCard');
+  let advice = '', color = 'var(--text2)';
+  if (!currentGluc) {
+    advice = '🌙 Mede a glicemia antes de dormir para saberes o que fazer.';
+  } else if (currentGluc < 100) {
+    advice = `🍌 Glicemia baixa (${currentGluc} mg/dL) — come um snack: 1 banana ou 2 bolachas integrais + 1 queijo. Risco de hipo noturna.`;
+    color = 'var(--amber)';
+  } else if (currentGluc <= 140) {
+    advice = `✅ Glicemia ok (${currentGluc} mg/dL) — podes dormir. Snack leve opcional (iogurte sem açúcar ou 1 fruta pequena).`;
+    color = 'var(--green)';
+  } else if (currentGluc <= 180) {
+    advice = `⚠️ Glicemia no limite (${currentGluc} mg/dL) — evita hidratos agora. Um copo de água e 15 min de caminhada podem ajudar.`;
+    color = 'var(--amber)';
+  } else {
+    advice = `🔴 Hiperglicemia (${currentGluc} mg/dL) — não durmas ainda. 20 min de marcha + 1 copo de água. Reavalia em 30 min.`;
+    color = 'var(--red)';
+  }
+  card.style.display = 'block';
+  card.innerHTML = `<div class="card" style="border-left:3px solid ${color}">
+    <div class="card-title" style="color:${color}">🌙 Protocolo de Deitar</div>
+    <div style="font-size:14px;line-height:1.5;color:var(--text)">${advice}</div>
+  </div>`;
+}
+
 function renderDashboard() {
-  const day = dayNum();
-  document.getElementById('dashDayNum').textContent = day;
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('pt-PT', { weekday:'long', day:'numeric', month:'long' });
+
+  renderGlucHero();
 
   const m = getMotivation();
   document.getElementById('motivationText').textContent = m.q;
@@ -3594,27 +3655,22 @@ function renderProgress() {
 }
 
 function renderProjections(cw, sw, gw) {
-  const lost = sw - cw;
-  const day = dayNum();
+  const lost = (sw||0) - (cw||0);
   const totalDays = Object.values(logs).filter(l=>l.weight).length || 1;
   const ratePerDay = lost > 0 ? lost / Math.max(totalDays, 1) : 0.07;
-  const remaining = 75 - day + 1;
-  const projEnd = cw - ratePerDay * remaining;
+  const next90 = 90;
+  const projEnd = (cw||0) - ratePerDay * next90;
   const totalPages = pages;
-  const pagesPerDay = day > 1 ? totalPages / (day-1||1) : 10;
-  const projPages = Math.round(totalPages + pagesPerDay * remaining);
+  const daysTracked = Object.values(logs).length || 1;
+  const pagesPerDay = totalPages / daysTracked;
+  const projPages = Math.round(totalPages + pagesPerDay * next90);
 
   const el = document.getElementById('projections');
   el.innerHTML = `
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
-      <div style="font-size:12px;color:var(--text2)">Peso previsto no dia 75</div>
+      <div style="font-size:12px;color:var(--text2)">Peso estimado em 90 dias</div>
       <div style="font-size:20px;font-weight:700;color:var(--green);margin:4px 0">${projEnd.toFixed(1)} kg</div>
-      <div style="font-size:12px;color:var(--text2)">Vais perder mais ~${(ratePerDay*remaining).toFixed(1)} kg até ao final 🎯</div>
-    </div>
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
-      <div style="font-size:12px;color:var(--text2)">Páginas no dia 75</div>
-      <div style="font-size:20px;font-weight:700;color:var(--blue);margin:4px 0">${projPages} páginas</div>
-      <div style="font-size:12px;color:var(--text2)">Já leste ${totalPages} páginas — continua! 📚</div>
+      <div style="font-size:12px;color:var(--text2)">Ao ritmo de ${(ratePerDay*1000).toFixed(0)}g/dia perdes ~${(ratePerDay*next90).toFixed(1)} kg 🎯</div>
     </div>
     ${gw && cw > gw ? `
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
@@ -3622,24 +3678,33 @@ function renderProjections(cw, sw, gw) {
       <div style="font-size:20px;font-weight:700;color:var(--amber);margin:4px 0">${ratePerDay > 0 ? Math.ceil((cw-gw)/ratePerDay) : '—'} dias</div>
       <div style="font-size:12px;color:var(--text2)">Ao ritmo atual de ${(ratePerDay*1000).toFixed(0)}g/dia 🔥</div>
     </div>` : ''}
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
+      <div style="font-size:12px;color:var(--text2)">Páginas lidas (próximos 90 dias)</div>
+      <div style="font-size:20px;font-weight:700;color:var(--blue);margin:4px 0">${projPages} páginas</div>
+      <div style="font-size:12px;color:var(--text2)">Já leste ${totalPages} páginas — continua! 📚</div>
+    </div>
   `;
 }
 
 function renderCalendar() {
+  // Show last 90 days rolling window
   const grid = document.getElementById('calendarGrid');
   grid.innerHTML = '';
-  for (let i = 0; i < 75; i++) {
-    const d = new Date(config?.startDate || today());
-    d.setDate(d.getDate() + i);
+  const start = new Date();
+  start.setDate(start.getDate() - 89);
+  for (let i = 0; i < 90; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
     const k = toDateStr(d);
     const log = logs[k];
     const done = log?.habits ? Object.values(log.habits).filter(Boolean).length : 0;
     const pct = done / HABITS.length;
-    const color = pct >= 0.8 ? 'var(--green)' : pct > 0 ? 'var(--amber)' : 'var(--border)';
+    const isFuture = k > today();
+    const color = isFuture ? 'var(--bg3)' : pct >= 0.8 ? 'var(--green)' : pct > 0 ? 'var(--amber)' : 'var(--border)';
     const isToday = k === today();
-    grid.innerHTML += `<div title="Dia ${i+1} — ${done}/${HABITS.length} hábitos" style="
-      aspect-ratio:1;border-radius:3px;background:${color};opacity:${pct===0&&k>today()?0.3:1};
-      ${isToday?'box-shadow:0 0 0 2px #fff3':''};cursor:default
+    grid.innerHTML += `<div title="${k} — ${done}/${HABITS.length} protocolos" style="
+      aspect-ratio:1;border-radius:3px;background:${color};opacity:${isFuture?0.2:1};
+      ${isToday?'box-shadow:0 0 0 2px #fff5':''};cursor:default
     "></div>`;
   }
 }
@@ -3648,23 +3713,25 @@ function renderCalendar() {
 // BADGES
 // ═══════════════════════════════════════
 const BADGE_DEFS = [
-  { id:'first', icon:'🌱', name:'Primeiro Dia', desc:'Completaste o dia 1', check: () => dayNum() >= 1 },
-  { id:'week1', icon:'🔥', name:'1 Semana', desc:'7 dias de challenge', check: () => dayNum() >= 7 },
-  { id:'streak3', icon:'⚡', name:'3 em fila', desc:'3 dias seguidos completos', check: () => getStreak() >= 3 },
-  { id:'streak7', icon:'💎', name:'7 dias streak', desc:'7 dias seguidos completos', check: () => getStreak() >= 7 },
-  { id:'water10', icon:'💧', name:'Hidratado', desc:'10 dias com 3L+ de água', check: () => Object.values(logs).filter(l=>l.water>=3).length >= 10 },
-  { id:'halfway', icon:'🏁', name:'Meio caminho', desc:'Dia 37 do challenge', check: () => dayNum() >= 37 },
-  { id:'kg2', icon:'⚖️', name:'2 kg perdidos', desc:'Perdeste 2 kg desde o início', check: () => config && (config.startWeight - getCurrentWeight()) >= 2 },
-  { id:'kg5', icon:'🏆', name:'5 kg perdidos', desc:'Perdeste 5 kg — incrível!', check: () => config && (config.startWeight - getCurrentWeight()) >= 5 },
-  { id:'read50', icon:'📚', name:'50 páginas', desc:'50 páginas lidas', check: () => pages >= 50 },
-  { id:'read200', icon:'📖', name:'200 páginas', desc:'200 páginas lidas', check: () => pages >= 200 },
-  { id:'noalc7', icon:'🚫', name:'Semana seca', desc:'7 dias sem álcool', check: () => Object.values(logs).filter(l=>l.habits?.noalcohol).length >= 7 },
-  { id:'done75', icon:'🎉', name:'75 Challenge!', desc:'Completaste os 75 dias!', check: () => dayNum() >= 75 },
+  { id:'first',    icon:'🌱', name:'Primeiro Dia',      desc:'Completaste o primeiro protocolo',         check: () => Object.values(logs).some(l=>l.completed) },
+  { id:'streak3',  icon:'⚡', name:'3 dias seguidos',    desc:'3 dias completos consecutivos',            check: () => getStreak() >= 3 },
+  { id:'streak7',  icon:'🔥', name:'1 Semana',           desc:'7 dias seguidos de protocolo completo',    check: () => getStreak() >= 7 },
+  { id:'streak30', icon:'💎', name:'1 Mês',              desc:'30 dias seguidos — excelente controlo!',  check: () => getStreak() >= 30 },
+  { id:'water10',  icon:'💧', name:'Hidratado',          desc:'10 dias com 3L+ de água',                  check: () => Object.values(logs).filter(l=>l.water>=3).length >= 10 },
+  { id:'exercise10',icon:'🏋️',name:'10 Treinos',        desc:'10 dias com exercício registado',          check: () => Object.values(logs).filter(l=>l.exercise).length >= 10 },
+  { id:'kg2',      icon:'⚖️', name:'2 kg perdidos',      desc:'Perdeste 2 kg desde o início',             check: () => config && (config.startWeight - getCurrentWeight()) >= 2 },
+  { id:'kg5',      icon:'🏆', name:'5 kg perdidos',      desc:'Perdeste 5 kg — incrível!',               check: () => config && (config.startWeight - getCurrentWeight()) >= 5 },
+  { id:'kg10',     icon:'🎯', name:'10 kg perdidos',     desc:'10 kg a menos — controlo transformado!',  check: () => config && (config.startWeight - getCurrentWeight()) >= 10 },
+  { id:'read50',   icon:'📚', name:'50 páginas',         desc:'50 páginas lidas',                         check: () => pages >= 50 },
+  { id:'read200',  icon:'📖', name:'200 páginas',        desc:'200 páginas lidas',                        check: () => pages >= 200 },
+  { id:'noalc7',   icon:'🚫', name:'Semana seca',        desc:'7 dias sem álcool',                        check: () => Object.values(logs).filter(l=>l.habits?.noalcohol).length >= 7 },
+  { id:'noalc30',  icon:'🚫🏅', name:'Mês sem álcool',  desc:'30 dias sem álcool',                       check: () => Object.values(logs).filter(l=>l.habits?.noalcohol).length >= 30 },
+  { id:'basal30',  icon:'💉', name:'Insulina em dia',    desc:'30 dias com basal tomada',                 check: () => Object.values(logs).filter(l=>l.habits?.basal).length >= 30 },
 ];
 
 function renderBadges() {
   document.getElementById('totalPages').textContent = pages;
-  document.getElementById('readProgress').style.width = Math.min(100, pages/750*100)+'%';
+  document.getElementById('readProgress').style.width = Math.min(100, pages/750*100)+'%'; // 750 = meta anual
 
   const grid = document.getElementById('badgesGrid');
   grid.innerHTML = BADGE_DEFS.map(b => {
@@ -4829,8 +4896,8 @@ function setupPWA() {
   // Web manifest (blob URL)
   try {
     const manifest = {
-      name: '⚡ 75 Challenge', short_name: '⚡ 75',
-      description: 'Diabetes 75-day challenge tracker',
+      name: '🩸 DiabControl', short_name: '🩸 DiabCtrl',
+      description: 'Gestão da diabetes — glicemia, nutrição e exercício',
       start_url: window.location.href,
       display: 'standalone', orientation: 'portrait',
       background_color: '#0d0d0d', theme_color: '#0d0d0d',
@@ -5256,7 +5323,7 @@ function exportData() {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
-  a.download = `75challenge_${currentUser}_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `diabcontrol_${currentUser}_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('Dados exportados ✓', 'var(--green)');
